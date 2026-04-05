@@ -127,23 +127,13 @@
   .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);}
   .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1a1a18;color:#fff;padding:10px 20px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity 0.2s;pointer-events:none;white-space:nowrap;}
   .toast.show{opacity:1;}
-  .loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:500;}
-  .spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .loading-text{font-size:14px;color:var(--text2);}
+  
   @media(max-width:600px){.summary-grid{grid-template-columns:repeat(2,1fr);}.topbar{padding:0 1rem;}}
 </style>
 </head>
 <body>
 
-<!-- Loading overlay -->
-<div class="loading-overlay" id="loading-overlay">
-  <div style="font-size:32px">🔧</div>
-  <div class="spinner"></div>
-  <div class="loading-text">Connecting to your garage...</div>
-</div>
-
-<!-- Setup screen (shown if not configured) -->
+<!-- Setup screen -->
 <div id="setup-screen" class="setup-screen" style="display:none">
   <div class="setup-card">
     <div class="setup-logo">🔧</div>
@@ -277,10 +267,7 @@ function saveConfig() {
   localStorage.setItem('giq_sb_url', url);
   localStorage.setItem('giq_sb_key', key);
   err.style.display='none';
-  // Show loading overlay again
-  document.getElementById('setup-screen').style.display='none';
-  document.getElementById('loading-overlay').style.display='flex';
-  waitForSupabase();
+  connectAndLoad();
 }
 function resetConfig() {
   if (!confirm('Disconnect from database? Your data stays in Supabase — you can reconnect anytime.')) return;
@@ -893,101 +880,73 @@ function showModal(html){document.getElementById('modal-container').innerHTML=`<
 function closeModal(){document.getElementById('modal-container').innerHTML='';}
 
 // ── Init ─────────────────────────────────────────────────
-async function initApp(){
-  const cfg=loadConfig();
-  const overlay=document.getElementById('loading-overlay');
-  const setupScreen=document.getElementById('setup-screen');
-  const mainApp=document.getElementById('main-app');
-
-  // Double-check keys exist
-  if(!cfg.url||!cfg.key){
-    overlay.style.display='none';
-    setupScreen.style.display='flex';
-    return;
-  }
-
-  overlay.querySelector('.loading-text').textContent='Connecting to your garage...';
-
-  // Safety timeout — if stuck for 8 seconds, show setup screen with error
-  const timeout = setTimeout(()=>{
-    overlay.style.display='none';
-    setupScreen.style.display='flex';
+function showSetup(msg=''){
+  document.getElementById('setup-screen').style.display='flex';
+  document.getElementById('main-app').style.display='none';
+  if(msg){
     const err=document.getElementById('setup-error');
-    err.textContent='Connection timed out. Please check your Project URL and Anon Key below and try again.';
-    err.style.display='block';
-    if(cfg.url) document.getElementById('sb-url').value=cfg.url;
-    if(cfg.key) document.getElementById('sb-key').value=cfg.key;
-  }, 8000);
-
-  try {
-    // Check supabase library loaded
-    if(!window.supabase||!window.supabase.createClient){
-      throw new Error('Supabase library failed to load. Check your internet connection.');
-    }
-
-    supabase = window.supabase.createClient(cfg.url.trim(), cfg.key.trim());
-
-    overlay.querySelector('.loading-text').textContent='Loading your vehicles...';
-
-    const data = await dbLoadAll();
-    clearTimeout(timeout);
-
-    state.vehicles = data.vehicles;
-    state.history = data.history;
-    overlay.style.display='none';
-    setupScreen.style.display='none';
-    mainApp.style.display='block';
-    renderDashboard();
-    setSynced();
-  } catch(e) {
-    clearTimeout(timeout);
-    overlay.style.display='none';
-    setupScreen.style.display='flex';
-    const err=document.getElementById('setup-error');
-    let msg = e.message||'Unknown error';
-    if(msg.includes('Failed to fetch')||msg.includes('NetworkError')){
-      msg='Cannot reach Supabase. Make sure your Project URL is correct and you have internet.';
-    } else if(msg.includes('Invalid API key')||msg.includes('apikey')||msg.includes('401')){
-      msg='Invalid Anon Key. Go to Supabase → Project Settings → API and copy the anon/public key again.';
-    } else if(msg.includes('does not exist')||msg.includes('relation')){
-      msg='Tables not found. Make sure you ran the SQL setup in Supabase → SQL Editor.';
-    }
     err.textContent='⚠️ '+msg;
     err.style.display='block';
-    if(cfg.url) document.getElementById('sb-url').value=cfg.url;
-    if(cfg.key) document.getElementById('sb-key').value=cfg.key;
+  }
+  const cfg=loadConfig();
+  if(cfg.url) document.getElementById('sb-url').value=cfg.url;
+  if(cfg.key) document.getElementById('sb-key').value=cfg.key;
+}
+
+function showApp(){
+  document.getElementById('setup-screen').style.display='none';
+  document.getElementById('main-app').style.display='block';
+}
+
+async function connectAndLoad(){
+  const cfg=loadConfig();
+  if(!cfg.url||!cfg.key){ showSetup(); return; }
+  try {
+    if(!window.supabase||!window.supabase.createClient) throw new Error('Library not loaded');
+    supabase=window.supabase.createClient(cfg.url.trim(),cfg.key.trim());
+    const data=await dbLoadAll();
+    state.vehicles=data.vehicles;
+    state.history=data.history;
+    showApp();
+    renderDashboard();
+    setSynced();
+  } catch(e){
+    let msg=e.message||'Unknown error';
+    if(msg.includes('Failed to fetch')||msg.includes('NetworkError')) msg='Cannot reach Supabase. Check your Project URL.';
+    else if(msg.includes('401')||msg.includes('apikey')) msg='Invalid Anon Key. Copy it again from Supabase → Project Settings → API.';
+    else if(msg.includes('does not exist')||msg.includes('relation')) msg='Tables not found. Run the SQL in Supabase → SQL Editor.';
+    showSetup(msg);
   }
 }
 
-function waitForSupabase(tries=0){
+window.addEventListener('load', ()=>{
+  // Always show setup screen first if no keys saved
   const cfg=loadConfig();
-  const overlay=document.getElementById('loading-overlay');
-  const setupScreen=document.getElementById('setup-screen');
-
-  // No keys saved — show setup screen immediately, no waiting
   if(!cfg.url||!cfg.key){
-    overlay.style.display='none';
-    setupScreen.style.display='flex';
+    showSetup();
     return;
   }
-
-  // Keys exist — wait for supabase library then connect
-  if(window.supabase&&window.supabase.createClient){
-    initApp();
-  } else if(tries<30){
-    setTimeout(()=>waitForSupabase(tries+1), 200);
-  } else {
-    overlay.style.display='none';
-    setupScreen.style.display='flex';
-    const err=document.getElementById('setup-error');
-    err.textContent='⚠️ Could not load required libraries. Check your internet connection and refresh the page.';
-    err.style.display='block';
-    if(cfg.url) document.getElementById('sb-url').value=cfg.url;
-    if(cfg.key) document.getElementById('sb-key').value=cfg.key;
-  }
-}
-
-window.addEventListener('load', ()=>waitForSupabase());
+  // Keys exist — show a simple inline loading state inside setup screen while connecting
+  document.getElementById('setup-screen').style.display='flex';
+  const err=document.getElementById('setup-error');
+  err.textContent='🔄 Connecting to your garage...';
+  err.style.color='var(--text2)';
+  err.style.display='block';
+  // Wait for supabase lib then connect
+  let tries=0;
+  const wait=setInterval(()=>{
+    tries++;
+    if(window.supabase&&window.supabase.createClient){
+      clearInterval(wait);
+      err.style.display='none';
+      connectAndLoad();
+    } else if(tries>30){
+      clearInterval(wait);
+      err.style.color='var(--red)';
+      err.textContent='⚠️ Could not load libraries. Check your internet and refresh.';
+    }
+  },200);
+});
 </script>
 </body>
 </html>
