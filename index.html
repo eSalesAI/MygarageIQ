@@ -223,52 +223,26 @@ async function fbDelete(path){
 function getConfig(){return localStorage.getItem('giq_fb_url');}
 function setConfig(url){localStorage.setItem('giq_fb_url',url);}
 
-async function connectFirebase(){
-  const rawUrl=document.getElementById('fb-url').value.trim().replace(/\/+$/,'');
+function connectFirebase(){
+  const rawUrl=(document.getElementById('fb-url').value||'').trim().replace(/\/+$/,'');
   const err=document.getElementById('setup-err');
-  const btn=document.getElementById('connect-btn');
   err.style.display='none';
 
   if(!rawUrl){
     err.textContent='Please paste your Firebase database URL.';
-    err.style.display='block';return;
+    err.style.display='block';
+    return;
   }
   if(!rawUrl.includes('firebaseio.com')){
-    err.textContent='That URL doesn\'t look right. It should look like: https://yourproject-default-rtdb.firebaseio.com';
-    err.style.display='block';return;
-  }
-
-  // Clean up URL — remove trailing slash
-  const url=rawUrl.replace(/\/+$/,'');
-
-  btn.textContent='Connecting...';
-  btn.disabled=true;
-
-  try{
-    // Simple read test — just check if the DB responds at all
-    const r=await fetch(`${url}/garageiq.json?shallow=true`,{method:'GET'});
-    if(r.status===401||r.status===403){
-      throw new Error('Permission denied. Make sure you chose "Start in test mode" when creating the database.');
-    }
-    if(!r.ok&&r.status!==404){
-      throw new Error('Could not reach Firebase (HTTP '+r.status+'). Check your URL and try again.');
-    }
-    // Connection works — save and launch
-    setConfig(url);
-    DB_URL=url;
-    btn.textContent='Connect & Launch GarageIQ →';
-    btn.disabled=false;
-    launchApp();
-  }catch(e){
-    btn.textContent='Connect & Launch GarageIQ →';
-    btn.disabled=false;
-    let msg=e.message||'Unknown error';
-    if(msg.includes('Failed to fetch')||msg.includes('NetworkError')||msg.includes('CORS')){
-      msg='Cannot reach Firebase. Double-check your URL is copied correctly from Firebase → Realtime Database.';
-    }
-    err.textContent='⚠️ '+msg;
+    err.textContent='URL should contain firebaseio.com — copy it exactly from Firebase Realtime Database page.';
     err.style.display='block';
+    return;
   }
+
+  // Just save it and launch — no network test needed
+  setConfig(rawUrl);
+  DB_URL=rawUrl;
+  launchApp();
 }
 
 function resetSetup(){
