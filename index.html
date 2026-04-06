@@ -326,7 +326,18 @@ function getSched(make){const k=(make||'').toLowerCase();for(const key of Object
 function milesSince(v,sid){const r=state.history.filter(h=>h.vehicleId===v.id&&h.serviceId===sid);if(!r.length)return v.mileage;return v.mileage-r.sort((a,b)=>b.mileage-a.mileage)[0].mileage;}
 function lastDate(v,sid){const r=state.history.filter(h=>h.vehicleId===v.id&&h.serviceId===sid);if(!r.length)return null;return r.sort((a,b)=>new Date(b.date)-new Date(a.date))[0].date;}
 function moSince(d){if(!d)return 999;return(new Date()-new Date(d))/(1000*60*60*24*30);}
-function getStatus(v,s){const ms=milesSince(v,s.id),mo=moSince(lastDate(v,s.id));const pct=Math.max(ms/s.intervalMiles,mo/s.intervalMonths);return{status:pct>=1?'overdue':pct>=0.8?'due-soon':'ok',label:pct>=1?'Overdue':pct>=0.8?'Due soon':'OK',pct:Math.min(pct,1),milesUntil:Math.max(0,s.intervalMiles-ms),milesSince:ms};}
+function getStatus(v,s){
+  const hasHistory=state.history.some(h=>h.vehicleId===v.id&&h.serviceId===s.id);
+  const ignored=(v.ignoredServices||[]).includes(s.id);
+  if(!hasHistory){
+    // No history logged yet — can't know when last done
+    // Show as unknown/untracked so user is prompted to log first service
+    return{status:'unknown',label:'Not logged',pct:0,milesUntil:s.intervalMiles,milesSince:0,noHistory:true};
+  }
+  const ms=milesSince(v,s.id),mo=moSince(lastDate(v,s.id));
+  const pct=Math.max(ms/s.intervalMiles,mo/s.intervalMonths);
+  return{status:pct>=1?'overdue':pct>=0.8?'due-soon':'ok',label:pct>=1?'Overdue':pct>=0.8?'Due soon':'OK',pct:Math.min(pct,1),milesUntil:Math.max(0,s.intervalMiles-ms),milesSince:ms,noHistory:false};
+}
 function leaseInfo(v){if(!v.leaseEndMonth||!v.leaseEndYear)return null;return{months:Math.round((new Date(v.leaseEndYear,v.leaseEndMonth-1,1)-new Date())/(1000*60*60*24*30))};}
 function escHtml(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
@@ -341,24 +352,45 @@ function renderDashboard(){
   const all=[];state.vehicles.forEach(v=>getSched(v.make).forEach(s=>all.push({vehicle:v,service:s,...getStatus(v,s)})));
   const ov=all.filter(x=>x.status==='overdue').length,ds=all.filter(x=>x.status==='due-soon').length;
   const spent=state.history.reduce((a,h)=>a+(parseFloat(h.cost)||0),0);
-  document.getElementById('summary-grid').innerHTML=`<div class="metric"><div class="metric-label">Vehicles</div><div class="metric-value">${state.vehicles.length}</div></div><div class="metric"><div class="metric-label">Overdue</div><div class="metric-value" style="color:var(--red)">${ov}</div></div><div class="metric"><div class="metric-label">Due soon</div><div class="metric-value" style="color:var(--amber)">${ds}</div></div><div class="metric"><div class="metric-label">Total spent</div><div class="metric-value">$${Math.round(spent).toLocaleString()}</div></div>`;
+  document.getElementById('summary-grid').innerHTML=`<div class="metric"><div class="metric-label">Vehicles</div><div class="metric-value">${state.vehicles.length}</div></div><div class="metric"><div class="metric-label">Overdue</div><div class="metric-value" style="color:var(--red)">${totalOv||ov}</div></div><div class="metric"><div class="metric-label">Due soon</div><div class="metric-value" style="color:var(--amber)">${totalDs||ds}</div></div><div class="metric"><div class="metric-label">Total spent</div><div class="metric-value">$${Math.round(spent).toLocaleString()}</div></div>`;
   const vg=document.getElementById('vehicle-grid');
   if(!state.vehicles.length){vg.innerHTML='<div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-title">No vehicles yet</div><p>Click "+ Add vehicle" to get started.</p></div>';document.getElementById('alerts-section').innerHTML='';return;}
-  vg.innerHTML=state.vehicles.map(v=>vcHTML(v)).join('');
-  const urgent=all.filter(x=>x.status==='overdue'||x.status==='due-soon').slice(0,8);
+  // Sort vehicles
+  const sortBy=(document.getElementById('vehicle-sort')||{}).value||'name';
+  let sorted=[...state.vehicles];
+  if(sortBy==='name') sorted.sort((a,b)=>(a.make+a.model).localeCompare(b.make+b.model));
+  else if(sortBy==='mileage') sorted.sort((a,b)=>b.mileage-a.mileage);
+  else if(sortBy==='overdue') sorted.sort((a,b)=>{
+    const ovA=getSched(a.make).filter(s=>getStatus(a,s).status==='overdue').length;
+    const ovB=getSched(b.make).filter(s=>getStatus(b,s).status==='overdue').length;
+    return ovB-ovA;
+  });
+  vg.innerHTML=sorted.map(v=>vcHTML(v)).join('');
+  const urgent=all.filter(x=>{
+    const ignored=(x.vehicle.ignoredServices||[]).includes(x.service.id);
+    return !ignored&&(x.status==='overdue'||x.status==='due-soon');
+  }).slice(0,8);
+  // Update summary counts to exclude unknown
+  const totalOv=all.filter(x=>!(x.vehicle.ignoredServices||[]).includes(x.service.id)&&x.status==='overdue').length;
+  const totalDs=all.filter(x=>!(x.vehicle.ignoredServices||[]).includes(x.service.id)&&x.status==='due-soon').length;
   document.getElementById('alerts-section').innerHTML=urgent.length?`<hr class="sep"><div class="section-title">Needs attention now</div><div class="service-list">${urgent.map(x=>svcHTML(x.vehicle,x.service,x)).join('')}</div>`:'';
 }
 
 function vcHTML(v){
   const photo=v.customPhoto||getCarPhoto(v.make,v.model),fb=getFBIcon(v.make);
+  const ignoredIds=v.ignoredServices||[];
   const svcs=getSched(v.make).map(s=>({...s,...getStatus(v,s)}));
-  const ov=svcs.filter(s=>s.status==='overdue').length,ds=svcs.filter(s=>s.status==='due-soon').length;
+  const totalSpent=Math.round(state.history.filter(h=>h.vehicleId===v.id).reduce((a,h)=>a+(parseFloat(h.cost)||0),0));
+  const activeSvcs=svcs.filter(s=>!ignoredIds.includes(s.id));
+  const ov=activeSvcs.filter(s=>s.status==='overdue').length;
+  const ds=activeSvcs.filter(s=>s.status==='due-soon').length;
+  const untracked=activeSvcs.filter(s=>s.status==='unknown').length;
   const li=leaseInfo(v);let lbadge='';
   if(li){if(li.months<=0)lbadge='<span class="badge badge-red">Ended</span>';else if(li.months<=3)lbadge=`<span class="badge badge-red">${li.months}mo left</span>`;else if(li.months<=6)lbadge=`<span class="badge badge-amber">${li.months}mo left</span>`;else lbadge=`<span class="badge badge-purple">${li.months}mo left</span>`;}
   const leaseDate=(v.leaseEndMonth&&v.leaseEndYear)?`${MONTHS_LIST[v.leaseEndMonth-1]} ${v.leaseEndYear}`:'';
   const leaseLabel=v.leaseType==='payout'?'Loan payout':v.leaseType==='lease'?'Lease end':'';
   const ps=photo?`<img src="${photo}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="vc-fallback" style="display:none">${fb}</div>`:`<div class="vc-fallback">${fb}</div>`;
-  return `<div class="vehicle-card" onclick="goToSchedule('${v.id}')"><div class="vc-photo-wrap">${ps}<button class="vc-photo-btn" onclick="event.stopPropagation();uploadPhoto('${v.id}')">📷 Change photo</button></div><div class="vc-body"><div class="vc-header-row"><div><div class="vc-name">${escHtml(v.year+' '+v.make+' '+v.model)}</div>${v.trim?`<div class="vc-trim">${escHtml(v.trim)}</div>`:''}</div><div style="display:flex;gap:4px"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editVehicle('${v.id}')">✏️ Edit</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteVehicle('${v.id}')">Remove</button></div></div><div class="vc-mileage">${Number(v.mileage).toLocaleString()} miles${v.nickname?' · '+escHtml(v.nickname):''}</div>${leaseLabel&&leaseDate?`<div class="vc-lease"><span class="vc-lease-label">${leaseLabel}:</span><span class="vc-lease-date">${leaseDate}</span>${lbadge}</div>`:''}<div class="vc-alerts">${ov?`<span class="badge badge-red">${ov} overdue</span>`:''}${ds?`<span class="badge badge-amber">${ds} due soon</span>`:''}${!ov&&!ds?'<span class="badge badge-green">All good</span>':''}</div>
+  return `<div class="vehicle-card" onclick="goToSchedule('${v.id}')"><div class="vc-photo-wrap">${ps}<button class="vc-photo-btn" onclick="event.stopPropagation();uploadPhoto('${v.id}')">📷 Change photo</button></div><div class="vc-body"><div class="vc-header-row"><div><div class="vc-name">${escHtml(v.year+' '+v.make+' '+v.model)}</div>${v.trim?`<div class="vc-trim">${escHtml(v.trim)}</div>`:''}</div><div style="display:flex;gap:4px"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editVehicle('${v.id}')">✏️ Edit</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteVehicle('${v.id}')">Remove</button></div></div><div class="vc-mileage">${Number(v.mileage).toLocaleString()} miles${v.nickname?' · '+escHtml(v.nickname):''}${totalSpent>0?' · <strong>$'+totalSpent.toLocaleString()+'</strong> spent':''}</div>${leaseLabel&&leaseDate?`<div class="vc-lease"><span class="vc-lease-label">${leaseLabel}:</span><span class="vc-lease-date">${leaseDate}</span>${lbadge}</div>`:''}<div class="vc-alerts">${ov?`<span class="badge badge-red">${ov} overdue</span>`:''}${ds?`<span class="badge badge-amber">${ds} due soon</span>`:''}${untracked&&!ov&&!ds?`<span class="badge" style="background:var(--bg2);color:var(--text2)">${untracked} not logged</span>`:''} ${!ov&&!ds&&!untracked?'<span class="badge badge-green">All good</span>':''}</div>
       <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
         <button class="btn btn-sm" style="font-size:11px" onclick="event.stopPropagation();quickMileage('${v.id}')">🔢 Update mileage</button>
         <button class="btn btn-sm" style="font-size:11px" onclick="event.stopPropagation();goToHistory('${v.id}')">📋 View history</button>
@@ -367,10 +399,22 @@ function vcHTML(v){
 }
 
 function svcHTML(vehicle,svc,st){
-  const bc=st.status==='overdue'?'badge-red':st.status==='due-soon'?'badge-amber':'badge-green';
+  const bc=st.status==='overdue'?'badge-red':st.status==='due-soon'?'badge-amber':st.status==='unknown'?'badge-gray':'badge-green';
   const fc=st.status==='overdue'?'#E24B4A':st.status==='due-soon'?'#BA7517':'#639922';
-  const due=st.status==='overdue'?`${Math.round(st.milesSince-svc.intervalMiles).toLocaleString()} mi overdue`:st.milesUntil>0?`in ~${Math.round(st.milesUntil).toLocaleString()} mi`:'due now';
-  return `<div class="service-item"><div><div class="si-name">${escHtml(svc.name)} <span style="font-size:12px;font-weight:400;color:var(--text2)">· ${escHtml(vehicle.year+' '+vehicle.make+' '+vehicle.model)}</span></div><div class="si-due">${due}${svc.note?' · '+escHtml(svc.note):''}</div><div class="progress-bar"><div class="progress-fill" style="width:${Math.round(st.pct*100)}%;background:${fc}"></div></div></div><span class="badge ${bc}">${st.label}</span><button class="btn btn-primary btn-sm" style="white-space:nowrap" onclick="logServiceQuick('${vehicle.id}','${svc.id}')">Log done</button></div>`;
+  const due=st.status==='overdue'?`${Math.round(st.milesSince-svc.intervalMiles).toLocaleString()} mi overdue`:st.status==='unknown'?`Log first service to start tracking`:st.milesUntil>0?`in ~${Math.round(st.milesUntil).toLocaleString()} mi`:'due now';
+  const ignored=(vehicle.ignoredServices||[]).includes(svc.id);
+  if(ignored) return `<div class="service-item" style="opacity:0.45">
+    <div><div class="si-name" style="text-decoration:line-through">${escHtml(svc.name)} <span style="font-size:12px;font-weight:400;color:var(--text2)">· ${escHtml(vehicle.year+' '+vehicle.make+' '+vehicle.model)}</span></div>
+    <div class="si-due">Ignored</div></div>
+    <span class="badge badge-gray" style="background:var(--bg2);color:var(--text2)">Ignored</span>
+    <button class="btn btn-sm btn-outline" style="white-space:nowrap;font-size:11px" onclick="toggleIgnore('${vehicle.id}','${svc.id}')">Unignore</button>
+  </div>`;
+  return `<div class="service-item"><div><div class="si-name">${escHtml(svc.name)} <span style="font-size:12px;font-weight:400;color:var(--text2)">· ${escHtml(vehicle.year+' '+vehicle.make+' '+vehicle.model)}</span></div><div class="si-due">${due}${svc.note?' · '+escHtml(svc.note):''}</div><div class="progress-bar"><div class="progress-fill" style="width:${Math.round(st.pct*100)}%;background:${fc}"></div></div></div>
+  <span class="badge ${bc}">${st.label}</span>
+  <div style="display:flex;gap:4px">
+    <button class="btn btn-primary btn-sm" style="white-space:nowrap" onclick="logServiceQuick('${vehicle.id}','${svc.id}')">Log done</button>
+    <button class="btn btn-sm btn-outline" style="white-space:nowrap;font-size:11px;color:var(--text2)" title="Ignore this service" onclick="toggleIgnore('${vehicle.id}','${svc.id}')">Ignore</button>
+  </div></div>`;
 }
 
 function goToSchedule(id){
@@ -395,7 +439,16 @@ function renderSchedule(){
   const list=document.getElementById('schedule-list');
   if(!vehicles.length){list.innerHTML='<div class="empty-state"><div class="empty-title">No vehicles yet</div></div>';return;}
   let html='';
-  vehicles.forEach(v=>{const svcs=getSched(v.make).map(s=>({...s,...getStatus(v,s)})).sort((a,b)=>b.pct-a.pct);if(fv==='all')html+=`<div style="font-size:13px;font-weight:600;margin:1.25rem 0 .5rem;color:var(--text2)">${escHtml(v.year+' '+v.make+' '+v.model)} · ${Number(v.mileage).toLocaleString()} mi</div>`;html+=`<div class="service-list" style="margin-bottom:1rem">${svcs.map(s=>svcHTML(v,s,s)).join('')}</div>`;});
+  vehicles.forEach(v=>{const ignoredIds=v.ignoredServices||[];
+    const svcs=getSched(v.make).map(s=>({...s,...getStatus(v,s)})).sort((a,b)=>{
+      const aIgn=ignoredIds.includes(a.id)?2:0;
+      const bIgn=ignoredIds.includes(b.id)?2:0;
+      const aUnk=a.status==='unknown'?1:0;
+      const bUnk=b.status==='unknown'?1:0;
+      const aScore=aIgn+aUnk, bScore=bIgn+bUnk;
+      if(aScore!==bScore)return aScore-bScore;
+      return b.pct-a.pct;
+    });if(fv==='all')html+=`<div style="font-size:13px;font-weight:600;margin:1.25rem 0 .5rem;color:var(--text2)">${escHtml(v.year+' '+v.make+' '+v.model)} · ${Number(v.mileage).toLocaleString()} mi</div>`;html+=`<div class="service-list" style="margin-bottom:1rem">${svcs.map(s=>svcHTML(v,s,s)).join('')}</div>`;});
   list.innerHTML=html;
 }
 
@@ -495,6 +548,23 @@ async function saveEditVehicle(id){
   renderDashboard();
   await saveVehicle(v);
   showToast('✅ Vehicle updated!');
+}
+
+async function toggleIgnore(vehicleId, serviceId){
+  const v=state.vehicles.find(x=>x.id===vehicleId);
+  if(!v)return;
+  if(!v.ignoredServices)v.ignoredServices=[];
+  const idx=v.ignoredServices.indexOf(serviceId);
+  if(idx>=0){
+    v.ignoredServices.splice(idx,1);
+    showToast('Service restored.');
+  } else {
+    v.ignoredServices.push(serviceId);
+    showToast('Service ignored — won't show in alerts.');
+  }
+  if(state.activeTab==='schedule')renderSchedule();
+  else renderDashboard();
+  await saveVehicle(v);
 }
 
 function goToHistory(id){
