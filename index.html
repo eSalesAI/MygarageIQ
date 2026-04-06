@@ -9,8 +9,29 @@
 @media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--text:#f0efe8;--text2:#a0a09a;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);--red-bg:#3a1515;--amber-bg:#3a2a08;--green-bg:#1a2e0a;--blue-bg:#0c2640;--purple-bg:#1e1a40;}}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh;}
+
+/* Setup */
+.setup-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;}
+.setup-card{background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:540px;box-shadow:0 8px 40px rgba(0,0,0,.1);}
+.setup-logo{font-size:32px;margin-bottom:.5rem;}
+.setup-title{font-size:22px;font-weight:700;margin-bottom:.35rem;}
+.setup-sub{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1.5rem;}
+.step{display:flex;gap:12px;margin-bottom:1rem;align-items:flex-start;}
+.step-n{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.step-t{font-size:13px;line-height:1.65;color:var(--text2);}
+.step-t strong{color:var(--text);}
+.step-t a{color:var(--accent);text-decoration:none;font-weight:600;}
+.code-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:.6rem .85rem;font-family:monospace;font-size:12px;color:var(--text2);margin:.4rem 0;word-break:break-all;line-height:1.6;}
+.divider{border:none;border-top:1px solid var(--border);margin:1.25rem 0;}
+.setup-err{color:var(--red);font-size:13px;margin-top:.6rem;display:none;padding:.6rem .85rem;background:var(--red-bg);border-radius:var(--rs);}
+
+/* App */
 .topbar{background:var(--bg);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:50;}
-.logo{font-size:18px;font-weight:700;}
+.logo{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.sync-indicator{font-size:11px;padding:3px 8px;border-radius:99px;font-weight:600;}
+.sync-ok{background:var(--green-bg);color:var(--green);}
+.sync-ing{background:var(--amber-bg);color:var(--amber);}
+.sync-err{background:var(--red-bg);color:var(--red);}
 .topbar-right{display:flex;gap:8px;align-items:center;}
 .app{max-width:1000px;margin:0 auto;padding:1.5rem 1rem 4rem;}
 .tabs{display:flex;gap:4px;margin-bottom:1.5rem;background:var(--bg2);border-radius:var(--r);padding:4px;width:fit-content;}
@@ -62,7 +83,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-primary:hover{background:var(--accent-dark);}
 .btn-sm{padding:5px 10px;font-size:11px;}
 .btn-danger{background:var(--red-bg);color:var(--red);border-color:var(--red-border);}
-.btn-success{background:var(--green-bg);color:var(--green);border-color:#C0DD97;}
 .btn-outline{background:transparent;color:var(--text2);border-color:var(--border2);}
 .add-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;font-size:13px;font-weight:600;border:1px solid var(--accent);border-radius:var(--rs);background:var(--accent);color:#fff;cursor:pointer;}
 .add-btn:hover{background:var(--accent-dark);}
@@ -73,11 +93,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cost-summary{font-size:13px;color:var(--text2);margin-bottom:1rem;}
 .cost-summary strong{color:var(--text);}
 .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;}
-.sync-bar{background:var(--blue-bg);border:1px solid rgba(24,95,165,.25);border-radius:var(--r);padding:.85rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.sync-bar-text{flex:1;font-size:13px;color:var(--blue);}
-.sync-bar-text strong{display:block;font-size:14px;margin-bottom:2px;}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem;z-index:300;overflow-y:auto;}
-.modal{background:var(--bg);border-radius:var(--r);border:1px solid var(--border);padding:1.75rem;width:100%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.modal{background:var(--bg);border-radius:var(--r);border:1px solid var(--border);padding:1.75rem;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
 .modal-title{font-size:17px;font-weight:700;margin-bottom:1.25rem;}
 .form-group{margin-bottom:.85rem;}
 .form-label{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.04em;}
@@ -88,141 +105,224 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
 .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);}
 .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1a1a18;color:#fff;padding:10px 20px;border-radius:var(--r);font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;}
-.sync-code{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:.75rem;font-family:monospace;font-size:11px;word-break:break-all;max-height:120px;overflow-y:auto;margin:.5rem 0;}
 @media(max-width:600px){.summary-grid{grid-template-columns:repeat(2,1fr);}.topbar{padding:0 1rem;}}
 </style>
 </head>
 <body>
-<div class="topbar">
-  <div class="logo">🔧 GarageIQ</div>
-  <div class="topbar-right">
-    <button class="btn btn-sm btn-outline" onclick="openSync()">📱 Sync devices</button>
-    <button class="btn btn-sm btn-success" onclick="exportData()">💾 Backup</button>
-    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
-    <button class="add-btn" onclick="openAddVehicle()">+ Add vehicle</button>
-  </div>
-</div>
 
-<div class="app">
-  <div class="sync-bar">
-    <div style="font-size:24px">📱</div>
-    <div class="sync-bar-text">
-      <strong>Use on all your devices</strong>
-      Click "Sync devices" to copy your data to your phone or any other device instantly.
+<!-- SETUP SCREEN -->
+<div id="setup-wrap" class="setup-wrap">
+  <div class="setup-card">
+    <div class="setup-logo">🔧</div>
+    <div class="setup-title">GarageIQ — One-time setup</div>
+    <div class="setup-sub">Connect a free Firebase database so your garage syncs automatically across your phone, tablet, and computer. Takes about 3 minutes.</div>
+
+    <div class="step">
+      <div class="step-n">1</div>
+      <div class="step-t">Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> and sign in with your Google account.</div>
     </div>
-    <button class="btn btn-sm btn-primary" onclick="openSync()">Sync now</button>
-  </div>
-
-  <div class="tabs">
-    <button class="tab active" onclick="setTab('dashboard',this)">Dashboard</button>
-    <button class="tab" onclick="setTab('schedule',this)">Service schedule</button>
-    <button class="tab" onclick="setTab('history',this)">Service history</button>
-  </div>
-
-  <div id="view-dashboard">
-    <div class="summary-grid" id="summary-grid"></div>
-    <div class="section-title">Your vehicles</div>
-    <div class="vehicle-grid" id="vehicle-grid"></div>
-    <div id="alerts-section"></div>
-  </div>
-  <div id="view-schedule" style="display:none">
-    <div class="toolbar">
-      <div class="section-title" style="margin:0">Upcoming services</div>
-      <select id="schedule-vehicle-filter" onchange="renderSchedule()" style="width:auto;font-size:13px;padding:7px 11px;"></select>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div class="step-t">Click <strong>Create a project</strong> → name it <strong>garageiq</strong> → disable Google Analytics → click <strong>Create project</strong>.</div>
     </div>
-    <div id="schedule-list"></div>
-  </div>
-  <div id="view-history" style="display:none">
-    <div class="toolbar">
-      <div class="section-title" style="margin:0">Service history</div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <select id="history-vehicle-filter" onchange="renderHistory()" style="width:auto;font-size:13px;padding:7px 11px;"></select>
-        <button class="add-btn" onclick="openLogService()">+ Log service</button>
+    <div class="step">
+      <div class="step-n">3</div>
+      <div class="step-t">In your project, click <strong>Build → Realtime Database</strong> → <strong>Create database</strong> → choose <strong>United States</strong> → select <strong>Start in test mode</strong> → click <strong>Enable</strong>.</div>
+    </div>
+    <div class="step">
+      <div class="step-n">4</div>
+      <div class="step-t">You'll see a URL at the top of the database page that looks like this — copy it and paste below:<br>
+        <div class="code-box">https://garageiq-xxxxx-default-rtdb.firebaseio.com</div>
       </div>
     </div>
-    <div class="cost-summary" id="cost-summary"></div>
-    <div id="history-list"></div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label class="form-label">Your Firebase Database URL</label>
+      <input id="fb-url" type="url" placeholder="https://garageiq-xxxxx-default-rtdb.firebaseio.com">
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:11px;font-size:14px" onclick="connectFirebase()">Connect & Launch GarageIQ →</button>
+    <div class="setup-err" id="setup-err"></div>
   </div>
 </div>
+
+<!-- MAIN APP -->
+<div id="main-app" style="display:none">
+  <div class="topbar">
+    <div class="logo">🔧 GarageIQ <span class="sync-indicator sync-ok" id="sync-badge">● Synced</span></div>
+    <div class="topbar-right">
+      <button class="btn btn-sm btn-outline" onclick="resetSetup()">⚙ Database</button>
+      <button class="add-btn" onclick="openAddVehicle()">+ Add vehicle</button>
+    </div>
+  </div>
+  <div class="app">
+    <div class="tabs">
+      <button class="tab active" onclick="setTab('dashboard',this)">Dashboard</button>
+      <button class="tab" onclick="setTab('schedule',this)">Service schedule</button>
+      <button class="tab" onclick="setTab('history',this)">Service history</button>
+    </div>
+    <div id="view-dashboard">
+      <div class="summary-grid" id="summary-grid"></div>
+      <div class="section-title">Your vehicles</div>
+      <div class="vehicle-grid" id="vehicle-grid"></div>
+      <div id="alerts-section"></div>
+    </div>
+    <div id="view-schedule" style="display:none">
+      <div class="toolbar">
+        <div class="section-title" style="margin:0">Upcoming services</div>
+        <select id="schedule-vehicle-filter" onchange="renderSchedule()" style="width:auto;font-size:13px;padding:7px 11px;"></select>
+      </div>
+      <div id="schedule-list"></div>
+    </div>
+    <div id="view-history" style="display:none">
+      <div class="toolbar">
+        <div class="section-title" style="margin:0">Service history</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="history-vehicle-filter" onchange="renderHistory()" style="width:auto;font-size:13px;padding:7px 11px;"></select>
+          <button class="add-btn" onclick="openLogService()">+ Log service</button>
+        </div>
+      </div>
+      <div class="cost-summary" id="cost-summary"></div>
+      <div id="history-list"></div>
+    </div>
+  </div>
+</div>
+
 <div id="modal-container"></div>
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Toast ──────────────────────────────────────────────
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
 
-// ── State & Storage ──────────────────────────────────────
-let state={vehicles:[],history:[],activeTab:'dashboard'};
-function save(){try{localStorage.setItem('giq_v',JSON.stringify(state.vehicles));localStorage.setItem('giq_h',JSON.stringify(state.history));}catch(e){}}
-function load(){try{const v=localStorage.getItem('giq_v'),h=localStorage.getItem('giq_h');if(v)state.vehicles=JSON.parse(v);if(h)state.history=JSON.parse(h);}catch(e){}}
+// ── Sync badge ─────────────────────────────────────────
+function setSyncing(){const b=document.getElementById('sync-badge');if(b){b.className='sync-indicator sync-ing';b.textContent='● Saving...';}}
+function setSynced(){const b=document.getElementById('sync-badge');if(b){b.className='sync-indicator sync-ok';b.textContent='● Synced';}}
+function setSyncErr(){const b=document.getElementById('sync-badge');if(b){b.className='sync-indicator sync-err';b.textContent='● Sync error';}}
 
-// ── Backup / Restore ─────────────────────────────────────
-function exportData(){
-  const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),vehicles:state.vehicles,history:state.history},null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`GarageIQ-backup-${new Date().toISOString().split('T')[0]}.json`;a.click();
-  showToast('✅ Backup downloaded!');
+// ── Firebase REST API (no SDK needed!) ─────────────────
+let DB_URL = '';
+
+async function fbGet(path){
+  const r=await fetch(`${DB_URL}/${path}.json`);
+  if(!r.ok)throw new Error('DB read failed: '+r.status);
+  return r.json();
 }
-function importData(e){
-  const file=e.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    try{
-      const d=JSON.parse(ev.target.result);
-      if(!d.vehicles||!d.history)throw new Error();
-      if(!confirm(`Restore ${d.vehicles.length} vehicle(s) and ${d.history.length} record(s)? This replaces current data.`))return;
-      state.vehicles=d.vehicles;state.history=d.history;save();
-      renderDashboard();showToast(`✅ Restored ${d.vehicles.length} vehicles!`);
-    }catch{alert('Invalid backup file.');}
-  };
-  reader.readAsText(file);
+async function fbSet(path,data){
+  const r=await fetch(`${DB_URL}/${path}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  if(!r.ok)throw new Error('DB write failed: '+r.status);
+  return r.json();
+}
+async function fbDelete(path){
+  const r=await fetch(`${DB_URL}/${path}.json`,{method:'DELETE'});
+  if(!r.ok)throw new Error('DB delete failed: '+r.status);
 }
 
-// ── Sync between devices ─────────────────────────────────
-function openSync(){
-  const data=JSON.stringify({vehicles:state.vehicles,history:state.history});
-  const b64=btoa(unescape(encodeURIComponent(data)));
-  showModal(`
-    <div class="modal-title">📱 Sync to another device</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.6">Choose how to transfer your data to your phone or another device:</p>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:1.25rem">
-      <button class="btn btn-primary" onclick="exportData();closeModal()">⬇ Download backup file → open on other device and tap Restore</button>
-      <div style="border:1px solid var(--border);border-radius:var(--rs);padding:1rem;">
-        <div style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem">Or paste this code on your other device</div>
-        <div class="sync-code" id="sync-code-display">${b64.substring(0,100)}... (${Math.round(b64.length/1024)}KB)</div>
-        <button class="btn btn-sm" style="margin-top:6px" onclick="navigator.clipboard.writeText('${b64}').then(()=>showToast('Code copied!'))">Copy full sync code</button>
-      </div>
-    </div>
-    <hr style="border:none;border-top:1px solid var(--border);margin:.75rem 0">
-    <div style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem">Paste sync code from another device</div>
-    <textarea id="sync-paste" placeholder="Paste sync code here..." style="min-height:60px"></textarea>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal()">Close</button>
-      <button class="btn btn-primary" onclick="importSyncCode()">Import from code</button>
-    </div>
-  `);
-}
-function importSyncCode(){
+// ── Config ─────────────────────────────────────────────
+function getConfig(){return localStorage.getItem('giq_fb_url');}
+function setConfig(url){localStorage.setItem('giq_fb_url',url);}
+
+async function connectFirebase(){
+  const url=document.getElementById('fb-url').value.trim().replace(/\/+$/,'');
+  const err=document.getElementById('setup-err');
+  err.style.display='none';
+  if(!url){err.textContent='Please paste your Firebase database URL.';err.style.display='block';return;}
+  if(!url.includes('firebaseio.com')){err.textContent='That doesn\'t look right — the URL should end with .firebaseio.com';err.style.display='block';return;}
+  // Test the connection
   try{
-    const code=document.getElementById('sync-paste').value.trim();
-    const data=JSON.parse(decodeURIComponent(escape(atob(code))));
-    if(!data.vehicles)throw new Error();
-    if(!confirm(`Import ${data.vehicles.length} vehicle(s) and ${data.history.length} record(s)?`))return;
-    state.vehicles=data.vehicles;state.history=data.history;save();
-    closeModal();renderDashboard();showToast('✅ Data imported!');
-  }catch{alert('Invalid sync code. Try the backup file method instead.');}
+    const btn=document.querySelector('#setup-wrap .btn-primary');
+    btn.textContent='Connecting...';btn.disabled=true;
+    const testUrl=url.endsWith('.firebaseio.com')?url:url;
+    const r=await fetch(`${testUrl}/test.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:'"ok"'});
+    if(!r.ok)throw new Error('HTTP '+r.status+' — make sure you selected "Start in test mode"');
+    await fetch(`${testUrl}/test.json`,{method:'DELETE'});
+    setConfig(url);
+    DB_URL=url;
+    btn.textContent='Connect & Launch GarageIQ →';btn.disabled=false;
+    launchApp();
+  }catch(e){
+    const btn=document.querySelector('#setup-wrap .btn-primary');
+    btn.textContent='Connect & Launch GarageIQ →';btn.disabled=false;
+    err.textContent='⚠️ Could not connect: '+e.message;err.style.display='block';
+  }
 }
 
-// ── Car photos ───────────────────────────────────────────
-const CAR_PHOTOS={'toyota camry':'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&q=80','toyota corolla':'https://images.unsplash.com/photo-1590510609816-de0dea4c3dde?w=600&q=80','toyota rav4':'https://images.unsplash.com/photo-1633075770895-92a90e5f2f0b?w=600&q=80','toyota tacoma':'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=600&q=80','toyota highlander':'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=600&q=80','toyota prius':'https://images.unsplash.com/photo-1574095897898-6a3e2db83a3c?w=600&q=80','toyota tundra':'https://images.unsplash.com/photo-1612911912304-3cc74f395a5b?w=600&q=80','honda civic':'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=600&q=80','honda accord':'https://images.unsplash.com/photo-1617469767053-d3b523a0b982?w=600&q=80','honda cr-v':'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80','honda crv':'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80','honda pilot':'https://images.unsplash.com/photo-1551836022-4c4c79ecde51?w=600&q=80','ford f-150':'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80','ford f150':'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80','ford mustang':'https://images.unsplash.com/photo-1547744152-14d985cb937f?w=600&q=80','ford explorer':'https://images.unsplash.com/photo-1606220838315-056192d5e927?w=600&q=80','ford escape':'https://images.unsplash.com/photo-1537984822441-cff330075342?w=600&q=80','ford bronco':'https://images.unsplash.com/photo-1627037558426-c2d07beda3af?w=600&q=80','ford ranger':'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=600&q=80','chevrolet silverado':'https://images.unsplash.com/photo-1612911912304-3cc74f395a5b?w=600&q=80','chevrolet equinox':'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=600&q=80','chevrolet tahoe':'https://images.unsplash.com/photo-1571127236794-81c6ac6d3a13?w=600&q=80','chevrolet suburban':'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=600&q=80','chevrolet malibu':'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=600&q=80','bmw 3 series':'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=600&q=80','bmw 5 series':'https://images.unsplash.com/photo-1523983302513-c2a8c709e3b2?w=600&q=80','bmw x5':'https://images.unsplash.com/photo-1566473965997-3de9c817e938?w=600&q=80','bmw x3':'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=600&q=80','bmw m3':'https://images.unsplash.com/photo-1617814076229-3c2d916b5736?w=600&q=80','subaru outback':'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=600&q=80','subaru forester':'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80','subaru wrx':'https://images.unsplash.com/photo-1614200179396-2bdb77ebf81b?w=600&q=80','fiat 500':'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=80','fiat 500x':'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=600&q=80','fiat 500l':'https://images.unsplash.com/photo-1561134643-668f9057cce4?w=600&q=80','fiat 124':'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&q=80','jeep wrangler':'https://images.unsplash.com/photo-1529605510013-f0c9b0dfa2b5?w=600&q=80','jeep grand cherokee':'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&q=80','jeep cherokee':'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&q=80','jeep gladiator':'https://images.unsplash.com/photo-1529605510013-f0c9b0dfa2b5?w=600&q=80','dodge charger':'https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=600&q=80','dodge challenger':'https://images.unsplash.com/photo-1612825173281-9a193378527e?w=600&q=80','ram 1500':'https://images.unsplash.com/photo-1612911912304-3cc74f395a5b?w=600&q=80','nissan altima':'https://images.unsplash.com/photo-1590510609816-de0dea4c3dde?w=600&q=80','nissan rogue':'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80','nissan sentra':'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=600&q=80','hyundai sonata':'https://images.unsplash.com/photo-1617469767053-d3b523a0b982?w=600&q=80','hyundai tucson':'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80','hyundai elantra':'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=600&q=80','kia sorento':'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=600&q=80','kia sportage':'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80','kia telluride':'https://images.unsplash.com/photo-1571127236794-81c6ac6d3a13?w=600&q=80','volkswagen jetta':'https://images.unsplash.com/photo-1590510609816-de0dea4c3dde?w=600&q=80','volkswagen tiguan':'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=600&q=80','audi a4':'https://images.unsplash.com/photo-1606220838315-056192d5e927?w=600&q=80','audi q5':'https://images.unsplash.com/photo-1566473965997-3de9c817e938?w=600&q=80','mercedes c-class':'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&q=80','mercedes e-class':'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&q=80','tesla model 3':'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&q=80','tesla model y':'https://images.unsplash.com/photo-1619767886558-efdc259b6e09?w=600&q=80','tesla model s':'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&q=80','lexus rx':'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=600&q=80','lexus es':'https://images.unsplash.com/photo-1617469767053-d3b523a0b982?w=600&q=80','gmc sierra':'https://images.unsplash.com/photo-1612911912304-3cc74f395a5b?w=600&q=80','gmc yukon':'https://images.unsplash.com/photo-1571127236794-81c6ac6d3a13?w=600&q=80','mazda cx-5':'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80','volvo xc60':'https://images.unsplash.com/photo-1566473965997-3de9c817e938?w=600&q=80'};
+function resetSetup(){
+  if(!confirm('Disconnect from database? Your data stays in Firebase — you can reconnect anytime.'))return;
+  localStorage.removeItem('giq_fb_url');
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('setup-wrap').style.display='flex';
+}
+
+// ── State ──────────────────────────────────────────────
+let state={vehicles:[],history:[],activeTab:'dashboard'};
+
+async function launchApp(){
+  document.getElementById('setup-wrap').style.display='none';
+  document.getElementById('main-app').style.display='block';
+  // Load from Firebase
+  try{
+    const data=await fbGet('garageiq');
+    if(data){
+      state.vehicles=data.vehicles?Object.values(data.vehicles):[];
+      state.history=data.history?Object.values(data.history):[];
+    }
+    setSynced();
+  }catch(e){setSyncErr();showToast('⚠️ Could not load data');}
+  renderDashboard();
+  // Listen for real-time changes (poll every 5s — simple & works everywhere)
+  setInterval(async()=>{
+    try{
+      const data=await fbGet('garageiq');
+      if(data){
+        state.vehicles=data.vehicles?Object.values(data.vehicles):[];
+        state.history=data.history?Object.values(data.history):[];
+        if(state.activeTab==='dashboard')renderDashboard();
+        else if(state.activeTab==='schedule')renderSchedule();
+        else renderHistory();
+      }
+    }catch(e){}
+  },5000);
+}
+
+async function saveVehicle(v){
+  setSyncing();
+  try{await fbSet(`garageiq/vehicles/${v.id}`,v);setSynced();}
+  catch(e){setSyncErr();showToast('⚠️ Save failed');}
+}
+async function deleteVehicleDB(id){
+  setSyncing();
+  try{await fbDelete(`garageiq/vehicles/${id}`);await fbDelete(`garageiq/history`);
+    // re-save remaining history
+    const remaining={};state.history.forEach(h=>{remaining[h.id]=h;});
+    if(Object.keys(remaining).length)await fbSet('garageiq/history',remaining);
+    setSynced();
+  }catch(e){setSyncErr();}
+}
+async function saveHistory(r){
+  setSyncing();
+  try{await fbSet(`garageiq/history/${r.id}`,r);setSynced();}
+  catch(e){setSyncErr();showToast('⚠️ Save failed');}
+}
+async function deleteHistoryDB(id){
+  setSyncing();
+  try{await fbDelete(`garageiq/history/${id}`);setSynced();}
+  catch(e){setSyncErr();}
+}
+
+// ── Car photos ─────────────────────────────────────────
+const CAR_PHOTOS={'toyota camry':'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&q=80','toyota corolla':'https://images.unsplash.com/photo-1590510609816-de0dea4c3dde?w=600&q=80','toyota rav4':'https://images.unsplash.com/photo-1633075770895-92a90e5f2f0b?w=600&q=80','toyota tacoma':'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=600&q=80','toyota highlander':'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=600&q=80','toyota prius':'https://images.unsplash.com/photo-1574095897898-6a3e2db83a3c?w=600&q=80','toyota tundra':'https://images.unsplash.com/photo-1612911912304-3cc74f395a5b?w=600&q=80','honda civic':'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=600&q=80','honda accord':'https://images.unsplash.com/photo-1617469767053-d3b523a0b982?w=600&q=80','honda cr-v':'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80','honda crv':'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80','honda pilot':'https://images.unsplash.com/photo-1551836022-4c4c79ecde51?w=600&q=80','ford f-150':'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80','ford f150':'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80','ford mustang':'https://images.unsplash.com/photo-1547744152-14d985cb937f?w=600&q=80','ford explorer':'https://images.unsplash.com/photo-1606220838315-056192d5e927?w=600&q=80','ford escape':'https://images.unsplash.com/photo-1537984822441-cff330075342?w=600&q=80','ford bronco':'https://images.unsplash.com/photo-1627037558426-c2d07beda3af?w=600&q=80','ford ranger':'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=600&q=80','chevrolet silverado':'https://images.unsplash.com/photo-1612911912304-3cc74f395a5b?w=600&q=80','chevrolet equinox':'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=600&q=80','chevrolet tahoe':'https://images.unsplash.com/photo-1571127236794-81c6ac6d3a13?w=600&q=80','chevrolet suburban':'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=600&q=80','chevrolet malibu':'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=600&q=80','bmw 3 series':'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=600&q=80','bmw 5 series':'https://images.unsplash.com/photo-1523983302513-c2a8c709e3b2?w=600&q=80','bmw x5':'https://images.unsplash.com/photo-1566473965997-3de9c817e938?w=600&q=80','bmw x3':'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=600&q=80','bmw m3':'https://images.unsplash.com/photo-1617814076229-3c2d916b5736?w=600&q=80','subaru outback':'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=600&q=80','subaru forester':'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80','subaru wrx':'https://images.unsplash.com/photo-1614200179396-2bdb77ebf81b?w=600&q=80','fiat 500':'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=80','fiat 500x':'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=600&q=80','fiat 500l':'https://images.unsplash.com/photo-1561134643-668f9057cce4?w=600&q=80','fiat 124':'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&q=80','jeep wrangler':'https://images.unsplash.com/photo-1529605510013-f0c9b0dfa2b5?w=600&q=80','jeep grand cherokee':'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&q=80','jeep cherokee':'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&q=80','dodge charger':'https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=600&q=80','dodge challenger':'https://images.unsplash.com/photo-1612825173281-9a193378527e?w=600&q=80','ram 1500':'https://images.unsplash.com/photo-1612911912304-3cc74f395a5b?w=600&q=80','nissan altima':'https://images.unsplash.com/photo-1590510609816-de0dea4c3dde?w=600&q=80','nissan rogue':'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80','nissan sentra':'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=600&q=80','hyundai sonata':'https://images.unsplash.com/photo-1617469767053-d3b523a0b982?w=600&q=80','hyundai tucson':'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80','hyundai elantra':'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=600&q=80','kia sorento':'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=600&q=80','kia sportage':'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80','kia telluride':'https://images.unsplash.com/photo-1571127236794-81c6ac6d3a13?w=600&q=80','volkswagen jetta':'https://images.unsplash.com/photo-1590510609816-de0dea4c3dde?w=600&q=80','volkswagen tiguan':'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=600&q=80','audi a4':'https://images.unsplash.com/photo-1606220838315-056192d5e927?w=600&q=80','audi q5':'https://images.unsplash.com/photo-1566473965997-3de9c817e938?w=600&q=80','mercedes c-class':'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&q=80','mercedes e-class':'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&q=80','tesla model 3':'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&q=80','tesla model y':'https://images.unsplash.com/photo-1619767886558-efdc259b6e09?w=600&q=80','tesla model s':'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&q=80','lexus rx':'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=600&q=80','lexus es':'https://images.unsplash.com/photo-1617469767053-d3b523a0b982?w=600&q=80','gmc sierra':'https://images.unsplash.com/photo-1612911912304-3cc74f395a5b?w=600&q=80','gmc yukon':'https://images.unsplash.com/photo-1571127236794-81c6ac6d3a13?w=600&q=80','mazda cx-5':'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80','volvo xc60':'https://images.unsplash.com/photo-1566473965997-3de9c817e938?w=600&q=80'};
 const MAKE_FB={toyota:'🚗',honda:'🚗',ford:'🛻',chevrolet:'🚙',bmw:'🚘',subaru:'🚙',fiat:'🚗',jeep:'🚙',dodge:'🚗',ram:'🛻',nissan:'🚗',hyundai:'🚗',kia:'🚗',volkswagen:'🚗',audi:'🚘','mercedes-benz':'🚘',tesla:'⚡',lexus:'🚘',gmc:'🛻',mazda:'🚗',volvo:'🚘'};
 function getCarPhoto(make,model){const key=((make||'')+' '+(model||'')).toLowerCase().trim();for(const k of Object.keys(CAR_PHOTOS)){if(key.includes(k)||k.includes(key))return CAR_PHOTOS[k];}const mk=(make||'').toLowerCase();for(const k of Object.keys(CAR_PHOTOS)){if(k.startsWith(mk+' '))return CAR_PHOTOS[k];}return null;}
-function getFB(make){return MAKE_FB[(make||'').toLowerCase()]||'🚗';}
+function getFBIcon(make){return MAKE_FB[(make||'').toLowerCase()]||'🚗';}
 
-// ── Schedules ────────────────────────────────────────────
+// ── Schedules ──────────────────────────────────────────
 const SCHEDULES={default:[{id:'oil',name:'Oil & filter change',intervalMiles:5000,intervalMonths:6},{id:'tires',name:'Tire rotation',intervalMiles:6000,intervalMonths:6},{id:'air_filter',name:'Engine air filter',intervalMiles:15000,intervalMonths:12},{id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},{id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},{id:'spark_plugs',name:'Spark plugs',intervalMiles:30000,intervalMonths:36},{id:'coolant',name:'Coolant flush',intervalMiles:30000,intervalMonths:36},{id:'transmission',name:'Transmission fluid',intervalMiles:30000,intervalMonths:36},{id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:24},{id:'timing_belt',name:'Timing belt/chain',intervalMiles:60000,intervalMonths:60},{id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},{id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},{id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}],fiat:[{id:'oil',name:'Oil & filter change',intervalMiles:9000,intervalMonths:12,note:'Mopar/FCA full synthetic'},{id:'tires',name:'Tire rotation',intervalMiles:6000,intervalMonths:6},{id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},{id:'cabin_filter',name:'Cabin air filter',intervalMiles:20000,intervalMonths:18},{id:'spark_plugs',name:'Spark plugs (iridium)',intervalMiles:30000,intervalMonths:36,note:'MultiAir engines sensitive'},{id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},{id:'coolant',name:'Coolant flush',intervalMiles:50000,intervalMonths:60,note:'FCA HOAT coolant only'},{id:'transmission',name:'Transmission fluid (DCT)',intervalMiles:40000,intervalMonths:48,note:'TCT dual-clutch needs frequent checks'},{id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:24},{id:'timing_belt',name:'Timing belt replacement',intervalMiles:60000,intervalMonths:60,note:'Interference engine — do not skip'},{id:'multiair',name:'MultiAir actuator service',intervalMiles:60000,intervalMonths:60,note:'500, 500X, 500L engines'},{id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},{id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},{id:'inspect_belts',name:'Serpentine belt',intervalMiles:50000,intervalMonths:60},{id:'clutch',name:'Clutch inspection (manual)',intervalMiles:30000,intervalMonths:36}],toyota:[{id:'oil',name:'Oil & filter change',intervalMiles:10000,intervalMonths:12,note:'Full synthetic'},{id:'tires',name:'Tire rotation',intervalMiles:5000,intervalMonths:6},{id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},{id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},{id:'brakes',name:'Brake inspection',intervalMiles:30000,intervalMonths:30},{id:'spark_plugs',name:'Spark plugs (iridium)',intervalMiles:60000,intervalMonths:60},{id:'coolant',name:'Coolant flush',intervalMiles:100000,intervalMonths:60},{id:'transmission',name:'Transmission fluid',intervalMiles:60000,intervalMonths:60},{id:'brake_fluid',name:'Brake fluid flush',intervalMiles:45000,intervalMonths:36},{id:'timing_belt',name:'Timing chain inspection',intervalMiles:80000,intervalMonths:84},{id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},{id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},{id:'inspect_belts',name:'Serpentine belt',intervalMiles:80000,intervalMonths:72}],honda:[{id:'oil',name:'Oil & filter change',intervalMiles:7500,intervalMonths:12},{id:'tires',name:'Tire rotation',intervalMiles:7500,intervalMonths:6},{id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},{id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},{id:'brakes',name:'Brake inspection',intervalMiles:25000,intervalMonths:24},{id:'spark_plugs',name:'Spark plugs',intervalMiles:30000,intervalMonths:36},{id:'coolant',name:'Coolant flush',intervalMiles:60000,intervalMonths:60},{id:'transmission',name:'Transmission fluid',intervalMiles:30000,intervalMonths:36},{id:'brake_fluid',name:'Brake fluid flush',intervalMiles:45000,intervalMonths:36},{id:'timing_belt',name:'Timing belt',intervalMiles:60000,intervalMonths:60},{id:'battery',name:'Battery test/replace',intervalMiles:45000,intervalMonths:48},{id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},{id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}],ford:[{id:'oil',name:'Oil & filter change',intervalMiles:7500,intervalMonths:12},{id:'tires',name:'Tire rotation',intervalMiles:10000,intervalMonths:6},{id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},{id:'cabin_filter',name:'Cabin air filter',intervalMiles:25000,intervalMonths:24},{id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},{id:'spark_plugs',name:'Spark plugs',intervalMiles:60000,intervalMonths:60},{id:'coolant',name:'Coolant flush',intervalMiles:30000,intervalMonths:36},{id:'transmission',name:'Transmission fluid',intervalMiles:30000,intervalMonths:36},{id:'brake_fluid',name:'Brake fluid flush',intervalMiles:45000,intervalMonths:36},{id:'timing_belt',name:'Timing chain service',intervalMiles:80000,intervalMonths:96},{id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},{id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},{id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}],chevrolet:[{id:'oil',name:'Oil & filter change',intervalMiles:7500,intervalMonths:12},{id:'tires',name:'Tire rotation',intervalMiles:7500,intervalMonths:6},{id:'air_filter',name:'Engine air filter',intervalMiles:45000,intervalMonths:36},{id:'cabin_filter',name:'Cabin air filter',intervalMiles:25000,intervalMonths:24},{id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},{id:'spark_plugs',name:'Spark plugs (iridium)',intervalMiles:100000,intervalMonths:60},{id:'coolant',name:'Coolant flush',intervalMiles:150000,intervalMonths:60},{id:'transmission',name:'Transmission fluid',intervalMiles:45000,intervalMonths:36},{id:'brake_fluid',name:'Brake fluid flush',intervalMiles:45000,intervalMonths:36},{id:'timing_belt',name:'Timing chain service',intervalMiles:100000,intervalMonths:96},{id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},{id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},{id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}],bmw:[{id:'oil',name:'Oil & filter change',intervalMiles:10000,intervalMonths:12,note:'BMW full synthetic'},{id:'tires',name:'Tire rotation',intervalMiles:10000,intervalMonths:12},{id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},{id:'cabin_filter',name:'Cabin microfilter',intervalMiles:20000,intervalMonths:24},{id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},{id:'spark_plugs',name:'Spark plugs',intervalMiles:30000,intervalMonths:36},{id:'coolant',name:'Coolant flush',intervalMiles:60000,intervalMonths:60},{id:'transmission',name:'Transmission fluid',intervalMiles:50000,intervalMonths:48},{id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:24},{id:'timing_belt',name:'Timing chain/VANOS',intervalMiles:60000,intervalMonths:60},{id:'battery',name:'Battery test/register',intervalMiles:50000,intervalMonths:48},{id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},{id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}],subaru:[{id:'oil',name:'Oil & filter change',intervalMiles:6000,intervalMonths:6},{id:'tires',name:'Tire rotation',intervalMiles:6000,intervalMonths:6},{id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},{id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},{id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},{id:'spark_plugs',name:'Spark plugs',intervalMiles:30000,intervalMonths:36},{id:'coolant',name:'Coolant flush',intervalMiles:30000,intervalMonths:36},{id:'transmission',name:'Transmission fluid (CVT)',intervalMiles:25000,intervalMonths:30,note:'Critical for CVT models'},{id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:30},{id:'timing_belt',name:'Timing belt',intervalMiles:90000,intervalMonths:60},{id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},{id:'differential',name:'Differential/AWD fluid',intervalMiles:25000,intervalMonths:30},{id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12}]};
 const MAKES=['Acura','Audi','BMW','Buick','Cadillac','Chevrolet','Chrysler','Dodge','Fiat','Ford','Genesis','GMC','Honda','Hyundai','Infiniti','Jeep','Kia','Lexus','Lincoln','Mazda','Mercedes-Benz','Mitsubishi','Nissan','Ram','Subaru','Tesla','Toyota','Volkswagen','Volvo'];
 const MONTHS_LIST=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-function getSchedule(make){const k=(make||'').toLowerCase();for(const key of Object.keys(SCHEDULES)){if(key!=='default'&&k.includes(key))return SCHEDULES[key];}return SCHEDULES.default;}
+function getSched(make){const k=(make||'').toLowerCase();for(const key of Object.keys(SCHEDULES)){if(key!=='default'&&k.includes(key))return SCHEDULES[key];}return SCHEDULES.default;}
 function milesSince(v,sid){const r=state.history.filter(h=>h.vehicleId===v.id&&h.serviceId===sid);if(!r.length)return v.mileage;return v.mileage-r.sort((a,b)=>b.mileage-a.mileage)[0].mileage;}
 function lastDate(v,sid){const r=state.history.filter(h=>h.vehicleId===v.id&&h.serviceId===sid);if(!r.length)return null;return r.sort((a,b)=>new Date(b.date)-new Date(a.date))[0].date;}
 function moSince(d){if(!d)return 999;return(new Date()-new Date(d))/(1000*60*60*24*30);}
@@ -238,47 +338,47 @@ function setTab(tab,el){
 }
 
 function renderDashboard(){
-  const all=[];state.vehicles.forEach(v=>getSchedule(v.make).forEach(s=>all.push({vehicle:v,service:s,...getStatus(v,s)})));
-  const overdue=all.filter(x=>x.status==='overdue').length,dueSoon=all.filter(x=>x.status==='due-soon').length;
+  const all=[];state.vehicles.forEach(v=>getSched(v.make).forEach(s=>all.push({vehicle:v,service:s,...getStatus(v,s)})));
+  const ov=all.filter(x=>x.status==='overdue').length,ds=all.filter(x=>x.status==='due-soon').length;
   const spent=state.history.reduce((a,h)=>a+(parseFloat(h.cost)||0),0);
-  document.getElementById('summary-grid').innerHTML=`<div class="metric"><div class="metric-label">Vehicles</div><div class="metric-value">${state.vehicles.length}</div></div><div class="metric"><div class="metric-label">Overdue</div><div class="metric-value" style="color:var(--red)">${overdue}</div></div><div class="metric"><div class="metric-label">Due soon</div><div class="metric-value" style="color:var(--amber)">${dueSoon}</div></div><div class="metric"><div class="metric-label">Total spent</div><div class="metric-value">$${Math.round(spent).toLocaleString()}</div></div>`;
+  document.getElementById('summary-grid').innerHTML=`<div class="metric"><div class="metric-label">Vehicles</div><div class="metric-value">${state.vehicles.length}</div></div><div class="metric"><div class="metric-label">Overdue</div><div class="metric-value" style="color:var(--red)">${ov}</div></div><div class="metric"><div class="metric-label">Due soon</div><div class="metric-value" style="color:var(--amber)">${ds}</div></div><div class="metric"><div class="metric-label">Total spent</div><div class="metric-value">$${Math.round(spent).toLocaleString()}</div></div>`;
   const vg=document.getElementById('vehicle-grid');
   if(!state.vehicles.length){vg.innerHTML='<div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-title">No vehicles yet</div><p>Click "+ Add vehicle" to get started.</p></div>';document.getElementById('alerts-section').innerHTML='';return;}
-  vg.innerHTML=state.vehicles.map(v=>vehicleCardHTML(v)).join('');
+  vg.innerHTML=state.vehicles.map(v=>vcHTML(v)).join('');
   const urgent=all.filter(x=>x.status==='overdue'||x.status==='due-soon').slice(0,8);
-  document.getElementById('alerts-section').innerHTML=urgent.length?`<hr class="sep"><div class="section-title">Needs attention now</div><div class="service-list">${urgent.map(x=>svcRowHTML(x.vehicle,x.service,x)).join('')}</div>`:'';
+  document.getElementById('alerts-section').innerHTML=urgent.length?`<hr class="sep"><div class="section-title">Needs attention now</div><div class="service-list">${urgent.map(x=>svcHTML(x.vehicle,x.service,x)).join('')}</div>`:'';
 }
 
-function vehicleCardHTML(v){
-  const photo=v.customPhoto||getCarPhoto(v.make,v.model),fb=getFB(v.make);
-  const svcs=getSchedule(v.make).map(s=>({...s,...getStatus(v,s)}));
+function vcHTML(v){
+  const photo=v.customPhoto||getCarPhoto(v.make,v.model),fb=getFBIcon(v.make);
+  const svcs=getSched(v.make).map(s=>({...s,...getStatus(v,s)}));
   const ov=svcs.filter(s=>s.status==='overdue').length,ds=svcs.filter(s=>s.status==='due-soon').length;
   const li=leaseInfo(v);let lbadge='';
   if(li){if(li.months<=0)lbadge='<span class="badge badge-red">Ended</span>';else if(li.months<=3)lbadge=`<span class="badge badge-red">${li.months}mo left</span>`;else if(li.months<=6)lbadge=`<span class="badge badge-amber">${li.months}mo left</span>`;else lbadge=`<span class="badge badge-purple">${li.months}mo left</span>`;}
   const leaseDate=(v.leaseEndMonth&&v.leaseEndYear)?`${MONTHS_LIST[v.leaseEndMonth-1]} ${v.leaseEndYear}`:'';
   const leaseLabel=v.leaseType==='payout'?'Loan payout':v.leaseType==='lease'?'Lease end':'';
-  const photoSection=photo?`<img src="${photo}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="vc-fallback" style="display:none">${fb}</div>`:`<div class="vc-fallback">${fb}</div>`;
-  return `<div class="vehicle-card" onclick="goToSchedule('${v.id}')"><div class="vc-photo-wrap">${photoSection}<button class="vc-photo-btn" onclick="event.stopPropagation();uploadPhoto('${v.id}')">📷 Change photo</button></div><div class="vc-body"><div class="vc-header-row"><div><div class="vc-name">${escHtml(v.year+' '+v.make+' '+v.model)}</div>${v.trim?`<div class="vc-trim">${escHtml(v.trim)}</div>`:''}</div><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteVehicle('${v.id}')">Remove</button></div><div class="vc-mileage">${Number(v.mileage).toLocaleString()} miles${v.nickname?' · '+escHtml(v.nickname):''}</div>${leaseLabel&&leaseDate?`<div class="vc-lease"><span class="vc-lease-label">${leaseLabel}:</span><span class="vc-lease-date">${leaseDate}</span>${lbadge}</div>`:''}<div class="vc-alerts">${ov?`<span class="badge badge-red">${ov} overdue</span>`:''}${ds?`<span class="badge badge-amber">${ds} due soon</span>`:''}${!ov&&!ds?'<span class="badge badge-green">All good</span>':''}</div></div></div>`;
+  const ps=photo?`<img src="${photo}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="vc-fallback" style="display:none">${fb}</div>`:`<div class="vc-fallback">${fb}</div>`;
+  return `<div class="vehicle-card" onclick="goToSchedule('${v.id}')"><div class="vc-photo-wrap">${ps}<button class="vc-photo-btn" onclick="event.stopPropagation();uploadPhoto('${v.id}')">📷 Change photo</button></div><div class="vc-body"><div class="vc-header-row"><div><div class="vc-name">${escHtml(v.year+' '+v.make+' '+v.model)}</div>${v.trim?`<div class="vc-trim">${escHtml(v.trim)}</div>`:''}</div><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteVehicle('${v.id}')">Remove</button></div><div class="vc-mileage">${Number(v.mileage).toLocaleString()} miles${v.nickname?' · '+escHtml(v.nickname):''}</div>${leaseLabel&&leaseDate?`<div class="vc-lease"><span class="vc-lease-label">${leaseLabel}:</span><span class="vc-lease-date">${leaseDate}</span>${lbadge}</div>`:''}<div class="vc-alerts">${ov?`<span class="badge badge-red">${ov} overdue</span>`:''}${ds?`<span class="badge badge-amber">${ds} due soon</span>`:''}${!ov&&!ds?'<span class="badge badge-green">All good</span>':''}</div></div></div>`;
 }
 
-function svcRowHTML(vehicle,svc,st){
+function svcHTML(vehicle,svc,st){
   const bc=st.status==='overdue'?'badge-red':st.status==='due-soon'?'badge-amber':'badge-green';
   const fc=st.status==='overdue'?'#E24B4A':st.status==='due-soon'?'#BA7517':'#639922';
   const due=st.status==='overdue'?`${Math.round(st.milesSince-svc.intervalMiles).toLocaleString()} mi overdue`:st.milesUntil>0?`in ~${Math.round(st.milesUntil).toLocaleString()} mi`:'due now';
   return `<div class="service-item"><div><div class="si-name">${escHtml(svc.name)} <span style="font-size:12px;font-weight:400;color:var(--text2)">· ${escHtml(vehicle.year+' '+vehicle.make+' '+vehicle.model)}</span></div><div class="si-due">${due}${svc.note?' · '+escHtml(svc.note):''}</div><div class="progress-bar"><div class="progress-fill" style="width:${Math.round(st.pct*100)}%;background:${fc}"></div></div></div><span class="badge ${bc}">${st.label}</span><button class="btn btn-primary btn-sm" style="white-space:nowrap" onclick="logServiceQuick('${vehicle.id}','${svc.id}')">Log done</button></div>`;
 }
 
-function goToSchedule(id){window._scheduleTarget=id;document.querySelectorAll('.tab')[1].click();}
+function goToSchedule(id){window._schedTarget=id;document.querySelectorAll('.tab')[1].click();}
 
 function renderSchedule(){
   const sel=document.getElementById('schedule-vehicle-filter');
   sel.innerHTML='<option value="all">All vehicles</option>'+state.vehicles.map(v=>`<option value="${v.id}">${escHtml(v.year+' '+v.make+' '+v.model)}</option>`).join('');
-  if(window._scheduleTarget){sel.value=window._scheduleTarget;window._scheduleTarget=null;}
+  if(window._schedTarget){sel.value=window._schedTarget;window._schedTarget=null;}
   const fv=sel.value||'all',vehicles=fv==='all'?state.vehicles:state.vehicles.filter(v=>v.id===fv);
   const list=document.getElementById('schedule-list');
-  if(!vehicles.length){list.innerHTML='<div class="empty-state"><div class="empty-title">No vehicles added yet</div></div>';return;}
+  if(!vehicles.length){list.innerHTML='<div class="empty-state"><div class="empty-title">No vehicles yet</div></div>';return;}
   let html='';
-  vehicles.forEach(v=>{const svcs=getSchedule(v.make).map(s=>({...s,...getStatus(v,s)})).sort((a,b)=>b.pct-a.pct);if(fv==='all')html+=`<div style="font-size:13px;font-weight:600;margin:1.25rem 0 .5rem;color:var(--text2)">${escHtml(v.year+' '+v.make+' '+v.model)} · ${Number(v.mileage).toLocaleString()} mi</div>`;html+=`<div class="service-list" style="margin-bottom:1rem">${svcs.map(s=>svcRowHTML(v,s,s)).join('')}</div>`;});
+  vehicles.forEach(v=>{const svcs=getSched(v.make).map(s=>({...s,...getStatus(v,s)})).sort((a,b)=>b.pct-a.pct);if(fv==='all')html+=`<div style="font-size:13px;font-weight:600;margin:1.25rem 0 .5rem;color:var(--text2)">${escHtml(v.year+' '+v.make+' '+v.model)} · ${Number(v.mileage).toLocaleString()} mi</div>`;html+=`<div class="service-list" style="margin-bottom:1rem">${svcs.map(s=>svcHTML(v,s,s)).join('')}</div>`;});
   list.innerHTML=html;
 }
 
@@ -289,8 +389,8 @@ function renderHistory(){
   const spent=recs.reduce((a,h)=>a+(parseFloat(h.cost)||0),0);
   document.getElementById('cost-summary').innerHTML=recs.length?`${recs.length} record${recs.length>1?'s':''} &nbsp;·&nbsp; Total spent: <strong>$${spent.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>`:'';
   const list=document.getElementById('history-list');
-  if(!recs.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No service records yet</div><p>Log your first service above.</p></div>';return;}
-  list.innerHTML=recs.map(r=>{const v=state.vehicles.find(x=>x.id===r.vehicleId);const vn=v?escHtml(v.year+' '+v.make+' '+v.model):'Unknown vehicle';return `<div class="history-card"><div class="history-header"><div><div class="history-name">${escHtml(r.serviceName)}</div><div class="history-meta">${vn} &nbsp;·&nbsp; ${r.date} &nbsp;·&nbsp; ${Number(r.mileage).toLocaleString()} mi${r.shop?' &nbsp;·&nbsp; '+escHtml(r.shop):''}</div>${r.cost?`<span class="badge badge-blue" style="margin-top:6px;display:inline-flex">$${parseFloat(r.cost).toFixed(2)}</span>`:''}</div><button class="btn btn-sm btn-danger" onclick="deleteHistory('${r.id}')">Remove</button></div>${r.workDone?`<div class="history-detail"><div class="history-detail-label">What was done</div>${escHtml(r.workDone)}</div>`:''} ${r.notes?`<div class="history-detail"><div class="history-detail-label">Notes</div>${escHtml(r.notes)}</div>`:''}</div>`;}).join('');
+  if(!recs.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No service records yet</div></div>';return;}
+  list.innerHTML=recs.map(r=>{const v=state.vehicles.find(x=>x.id===r.vehicleId);const vn=v?escHtml(v.year+' '+v.make+' '+v.model):'Unknown';return`<div class="history-card"><div class="history-header"><div><div class="history-name">${escHtml(r.serviceName)}</div><div class="history-meta">${vn} · ${r.date} · ${Number(r.mileage).toLocaleString()} mi${r.shop?' · '+escHtml(r.shop):''}</div>${r.cost?`<span class="badge badge-blue" style="margin-top:6px;display:inline-flex">$${parseFloat(r.cost).toFixed(2)}</span>`:''}</div><button class="btn btn-sm btn-danger" onclick="deleteHistory('${r.id}')">Remove</button></div>${r.workDone?`<div class="history-detail"><div class="history-detail-label">What was done</div>${escHtml(r.workDone)}</div>`:''} ${r.notes?`<div class="history-detail"><div class="history-detail-label">Notes</div>${escHtml(r.notes)}</div>`:''}</div>`;}).join('');
 }
 
 function openAddVehicle(){
@@ -301,7 +401,7 @@ function openAddVehicle(){
   document.getElementById('v-lease-type').addEventListener('change',function(){document.getElementById('v-lease-fields').style.display=this.value?'block':'none';});
 }
 
-function addVehicle(){
+async function addVehicle(){
   const year=document.getElementById('v-year').value,make=document.getElementById('v-make').value;
   const model=document.getElementById('v-model').value.trim(),trim=document.getElementById('v-trim').value.trim();
   const mileage=parseInt(document.getElementById('v-mileage').value),nickname=document.getElementById('v-nickname').value.trim();
@@ -309,19 +409,20 @@ function addVehicle(){
   const leaseEndMonth=leaseType?parseInt(document.getElementById('v-lease-month').value):null;
   const leaseEndYear=leaseType?parseInt(document.getElementById('v-lease-year').value):null;
   if(!model||!mileage){alert('Please fill in model and mileage.');return;}
-  state.vehicles.push({id:Date.now().toString(),year,make,model,trim,mileage,nickname,leaseType,leaseEndMonth,leaseEndYear,customPhoto:null});
-  save();closeModal();renderDashboard();showToast('✅ Vehicle saved!');
+  const v={id:Date.now().toString(),year,make,model,trim,mileage,nickname,leaseType,leaseEndMonth,leaseEndYear,customPhoto:null};
+  state.vehicles.push(v);closeModal();renderDashboard();
+  await saveVehicle(v);showToast('✅ Vehicle saved!');
 }
 
-function deleteVehicle(id){
+async function deleteVehicle(id){
   if(!confirm('Remove this vehicle and all its records?'))return;
   state.vehicles=state.vehicles.filter(v=>v.id!==id);state.history=state.history.filter(h=>h.vehicleId!==id);
-  save();renderDashboard();showToast('Vehicle removed.');
+  renderDashboard();await deleteVehicleDB(id);showToast('Vehicle removed.');
 }
 
 function uploadPhoto(vehicleId){
   const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
-  inp.onchange=e=>{const file=e.target.files[0];if(!file)return;const img=new Image();const url=URL.createObjectURL(file);img.onload=()=>{const canvas=document.createElement('canvas');const MAX=600;let w=img.width,h=img.height;if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);const dataUrl=canvas.toDataURL('image/jpeg',.75);URL.revokeObjectURL(url);const v=state.vehicles.find(x=>x.id===vehicleId);if(v){v.customPhoto=dataUrl;save();renderDashboard();showToast('📷 Photo saved!');}};img.src=url;};
+  inp.onchange=async e=>{const file=e.target.files[0];if(!file)return;const img=new Image();const url=URL.createObjectURL(file);img.onload=async()=>{const canvas=document.createElement('canvas');const MAX=600;let w=img.width,h=img.height;if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);const dataUrl=canvas.toDataURL('image/jpeg',.75);URL.revokeObjectURL(url);const v=state.vehicles.find(x=>x.id===vehicleId);if(v){v.customPhoto=dataUrl;renderDashboard();await saveVehicle(v);showToast('📷 Photo saved!');}};img.src=url;};
   inp.click();
 }
 
@@ -330,14 +431,14 @@ function openLogService(vehicleId,serviceId){
   if(!state.vehicles.length){alert('Add a vehicle first.');return;}
   const today=new Date().toISOString().split('T')[0];
   const allSvc=[];Object.values(SCHEDULES).forEach(sch=>sch.forEach(s=>{if(!allSvc.find(a=>a.id===s.id))allSvc.push(s);}));
-  showModal(`<div class="modal-title">Log a service</div><div class="form-group"><label class="form-label">Vehicle</label><select id="ls-vehicle">${state.vehicles.map(v=>`<option value="${v.id}" ${v.id===vehicleId?'selected':''}>${escHtml(v.year+' '+v.make+' '+v.model)}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Service type</label><select id="ls-service">${allSvc.map(s=>`<option value="${s.id}" ${s.id===serviceId?'selected':''}>${escHtml(s.name)}</option>`).join('')}<option value="other">Other / custom</option></select></div><div class="form-group" id="ls-custom-wrap" style="display:none"><label class="form-label">Custom service name</label><input id="ls-custom" placeholder="e.g. Alignment, AC recharge..."></div><div class="form-row"><div class="form-group"><label class="form-label">Date of service</label><input id="ls-date" type="date" value="${today}"></div><div class="form-group"><label class="form-label">Mileage at service</label><input id="ls-mileage" type="number" placeholder="45000"></div></div><div class="form-row"><div class="form-group"><label class="form-label">Total cost ($)</label><input id="ls-cost" type="number" step="0.01" placeholder="0.00"></div><div class="form-group"><label class="form-label">Shop / mechanic</label><input id="ls-shop" placeholder="Dealer, Jiffy Lube..."></div></div><div class="form-group"><label class="form-label">Exactly what was done</label><textarea id="ls-workdone" placeholder="e.g. Replaced engine oil with 5W-30 Mobil 1 full synthetic, installed new OEM oil filter..."></textarea></div><div class="form-group"><label class="form-label">Tech notes / observations</label><textarea id="ls-notes" placeholder="e.g. Tech noticed front brake pads at 3mm — recommend replacing within 6 months." style="min-height:60px"></textarea></div><div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="logService()">Save record</button></div>`);
+  showModal(`<div class="modal-title">Log a service</div><div class="form-group"><label class="form-label">Vehicle</label><select id="ls-vehicle">${state.vehicles.map(v=>`<option value="${v.id}" ${v.id===vehicleId?'selected':''}>${escHtml(v.year+' '+v.make+' '+v.model)}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Service type</label><select id="ls-service">${allSvc.map(s=>`<option value="${s.id}" ${s.id===serviceId?'selected':''}>${escHtml(s.name)}</option>`).join('')}<option value="other">Other / custom</option></select></div><div class="form-group" id="ls-custom-wrap" style="display:none"><label class="form-label">Custom service name</label><input id="ls-custom" placeholder="e.g. Alignment, AC recharge..."></div><div class="form-row"><div class="form-group"><label class="form-label">Date of service</label><input id="ls-date" type="date" value="${today}"></div><div class="form-group"><label class="form-label">Mileage at service</label><input id="ls-mileage" type="number" placeholder="45000"></div></div><div class="form-row"><div class="form-group"><label class="form-label">Total cost ($)</label><input id="ls-cost" type="number" step="0.01" placeholder="0.00"></div><div class="form-group"><label class="form-label">Shop / mechanic</label><input id="ls-shop" placeholder="Dealer, Jiffy Lube..."></div></div><div class="form-group"><label class="form-label">Exactly what was done</label><textarea id="ls-workdone" placeholder="e.g. Replaced engine oil with 5W-30 Mobil 1 full synthetic, installed new OEM oil filter..."></textarea></div><div class="form-group"><label class="form-label">Tech notes / observations</label><textarea id="ls-notes" placeholder="e.g. Tech noticed front brake pads at 3mm." style="min-height:60px"></textarea></div><div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="logService()">Save record</button></div>`);
   document.getElementById('ls-service').addEventListener('change',function(){document.getElementById('ls-custom-wrap').style.display=this.value==='other'?'block':'none';});
   const vSel=document.getElementById('ls-vehicle'),mFld=document.getElementById('ls-mileage');
   function prefill(){const v=state.vehicles.find(x=>x.id===vSel.value);if(v&&!mFld.value)mFld.value=v.mileage;}
   prefill();vSel.addEventListener('change',prefill);
 }
 
-function logService(){
+async function logService(){
   const vehicleId=document.getElementById('ls-vehicle').value;
   const sid=document.getElementById('ls-service').value,isCustom=sid==='other';
   const sname=isCustom?document.getElementById('ls-custom').value.trim():document.getElementById('ls-service').options[document.getElementById('ls-service').selectedIndex].text;
@@ -345,23 +446,31 @@ function logService(){
   const cost=document.getElementById('ls-cost').value,shop=document.getElementById('ls-shop').value.trim();
   const workDone=document.getElementById('ls-workdone').value.trim(),notes=document.getElementById('ls-notes').value.trim();
   if(!sname||!date||!mileage){alert('Please fill in service type, date, and mileage.');return;}
-  state.history.push({id:Date.now().toString(),vehicleId,serviceId:isCustom?'custom_'+Date.now():sid,serviceName:sname,date,mileage,cost:cost||null,shop:shop||null,workDone:workDone||null,notes:notes||null});
-  const v=state.vehicles.find(x=>x.id===vehicleId);if(v&&mileage>v.mileage)v.mileage=mileage;
-  save();closeModal();
-  if(state.activeTab==='history')renderHistory();else renderDashboard();
-  showToast('✅ Service record saved!');
+  const record={id:Date.now().toString(),vehicleId,serviceId:isCustom?'custom_'+Date.now():sid,serviceName:sname,date,mileage,cost:cost||null,shop:shop||null,workDone:workDone||null,notes:notes||null};
+  state.history.push(record);
+  const v=state.vehicles.find(x=>x.id===vehicleId);if(v&&mileage>v.mileage){v.mileage=mileage;await saveVehicle(v);}
+  closeModal();if(state.activeTab==='history')renderHistory();else renderDashboard();
+  await saveHistory(record);showToast('✅ Service record saved!');
 }
 
-function deleteHistory(id){
+async function deleteHistory(id){
   if(!confirm('Remove this record?'))return;
-  state.history=state.history.filter(h=>h.id!==id);save();renderHistory();showToast('Record removed.');
+  state.history=state.history.filter(h=>h.id!==id);renderHistory();
+  await deleteHistoryDB(id);showToast('Record removed.');
 }
 
 function showModal(html){document.getElementById('modal-container').innerHTML=`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`;}
 function closeModal(){document.getElementById('modal-container').innerHTML='';}
 
-load();
-renderDashboard();
+// ── Boot ───────────────────────────────────────────────
+const saved=getConfig();
+if(saved){
+  DB_URL=saved;
+  document.getElementById('setup-wrap').style.display='none';
+  launchApp();
+} else {
+  document.getElementById('setup-wrap').style.display='flex';
+}
 </script>
 </body>
 </html>
