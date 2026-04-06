@@ -358,7 +358,7 @@ function vcHTML(v){
   const leaseDate=(v.leaseEndMonth&&v.leaseEndYear)?`${MONTHS_LIST[v.leaseEndMonth-1]} ${v.leaseEndYear}`:'';
   const leaseLabel=v.leaseType==='payout'?'Loan payout':v.leaseType==='lease'?'Lease end':'';
   const ps=photo?`<img src="${photo}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="vc-fallback" style="display:none">${fb}</div>`:`<div class="vc-fallback">${fb}</div>`;
-  return `<div class="vehicle-card" onclick="goToSchedule('${v.id}')"><div class="vc-photo-wrap">${ps}<button class="vc-photo-btn" onclick="event.stopPropagation();uploadPhoto('${v.id}')">📷 Change photo</button></div><div class="vc-body"><div class="vc-header-row"><div><div class="vc-name">${escHtml(v.year+' '+v.make+' '+v.model)}</div>${v.trim?`<div class="vc-trim">${escHtml(v.trim)}</div>`:''}</div><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteVehicle('${v.id}')">Remove</button></div><div class="vc-mileage">${Number(v.mileage).toLocaleString()} miles${v.nickname?' · '+escHtml(v.nickname):''}</div>${leaseLabel&&leaseDate?`<div class="vc-lease"><span class="vc-lease-label">${leaseLabel}:</span><span class="vc-lease-date">${leaseDate}</span>${lbadge}</div>`:''}<div class="vc-alerts">${ov?`<span class="badge badge-red">${ov} overdue</span>`:''}${ds?`<span class="badge badge-amber">${ds} due soon</span>`:''}${!ov&&!ds?'<span class="badge badge-green">All good</span>':''}</div></div></div>`;
+  return `<div class="vehicle-card" onclick="goToSchedule('${v.id}')"><div class="vc-photo-wrap">${ps}<button class="vc-photo-btn" onclick="event.stopPropagation();uploadPhoto('${v.id}')">📷 Change photo</button></div><div class="vc-body"><div class="vc-header-row"><div><div class="vc-name">${escHtml(v.year+' '+v.make+' '+v.model)}</div>${v.trim?`<div class="vc-trim">${escHtml(v.trim)}</div>`:''}</div><div style="display:flex;gap:4px"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editVehicle('${v.id}')">✏️ Edit</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteVehicle('${v.id}')">Remove</button></div></div><div class="vc-mileage">${Number(v.mileage).toLocaleString()} miles${v.nickname?' · '+escHtml(v.nickname):''}</div>${leaseLabel&&leaseDate?`<div class="vc-lease"><span class="vc-lease-label">${leaseLabel}:</span><span class="vc-lease-date">${leaseDate}</span>${lbadge}</div>`:''}<div class="vc-alerts">${ov?`<span class="badge badge-red">${ov} overdue</span>`:''}${ds?`<span class="badge badge-amber">${ds} due soon</span>`:''}${!ov&&!ds?'<span class="badge badge-green">All good</span>':''}</div></div></div>`;
 }
 
 function svcHTML(vehicle,svc,st){
@@ -412,6 +412,69 @@ async function addVehicle(){
   const v={id:Date.now().toString(),year,make,model,trim,mileage,nickname,leaseType,leaseEndMonth,leaseEndYear,customPhoto:null};
   state.vehicles.push(v);closeModal();renderDashboard();
   await saveVehicle(v);showToast('✅ Vehicle saved!');
+}
+
+function editVehicle(id){
+  const v=state.vehicles.find(x=>x.id===id);
+  if(!v)return;
+  const years=[];for(let y=2026;y>=1990;y--)years.push(y);
+  const mOpts=MONTHS_LIST.map((m,i)=>`<option value="${i+1}" ${v.leaseEndMonth===i+1?'selected':''}>${m}</option>`).join('');
+  const yOpts=[];for(let y=2024;y<=2035;y++)yOpts.push(`<option value="${y}" ${v.leaseEndYear===y?'selected':''}>${y}</option>`);
+  showModal(`<div class="modal-title">Edit vehicle</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Year</label><select id="v-year">${years.map(y=>`<option value="${y}" ${v.year==y?'selected':''}>${y}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">Make</label><select id="v-make">${MAKES.map(m=>`<option value="${m}" ${v.make===m?'selected':''}>${m}</option>`).join('')}</select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Model</label><input id="v-model" value="${v.model||''}"></div>
+      <div class="form-group"><label class="form-label">Trim</label><input id="v-trim" value="${v.trim||''}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Current mileage</label><input id="v-mileage" type="number" value="${v.mileage||''}"></div>
+      <div class="form-group"><label class="form-label">Nickname</label><input id="v-nickname" value="${v.nickname||''}"></div>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:.75rem 0">
+    <div class="form-group"><label class="form-label">Lease / Loan type</label>
+      <select id="v-lease-type">
+        <option value="" ${!v.leaseType?'selected':''}>Owned outright / none</option>
+        <option value="lease" ${v.leaseType==='lease'?'selected':''}>Lease — tracking end date</option>
+        <option value="payout" ${v.leaseType==='payout'?'selected':''}>Loan — tracking payout date</option>
+      </select>
+    </div>
+    <div id="v-lease-fields" style="display:${v.leaseType?'block':'none'}">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">End month</label><select id="v-lease-month">${mOpts}</select></div>
+        <div class="form-group"><label class="form-label">End year</label><select id="v-lease-year">${yOpts.join('')}</select></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditVehicle('${v.id}')">Save changes</button>
+    </div>`);
+  document.getElementById('v-lease-type').addEventListener('change',function(){
+    document.getElementById('v-lease-fields').style.display=this.value?'block':'none';
+  });
+}
+
+async function saveEditVehicle(id){
+  const v=state.vehicles.find(x=>x.id===id);
+  if(!v)return;
+  const model=document.getElementById('v-model').value.trim();
+  const mileage=parseInt(document.getElementById('v-mileage').value);
+  if(!model||!mileage){alert('Please fill in model and mileage.');return;}
+  v.year=document.getElementById('v-year').value;
+  v.make=document.getElementById('v-make').value;
+  v.model=model;
+  v.trim=document.getElementById('v-trim').value.trim();
+  v.mileage=mileage;
+  v.nickname=document.getElementById('v-nickname').value.trim();
+  v.leaseType=document.getElementById('v-lease-type').value;
+  v.leaseEndMonth=v.leaseType?parseInt(document.getElementById('v-lease-month').value):null;
+  v.leaseEndYear=v.leaseType?parseInt(document.getElementById('v-lease-year').value):null;
+  closeModal();
+  renderDashboard();
+  await saveVehicle(v);
+  showToast('✅ Vehicle updated!');
 }
 
 async function deleteVehicle(id){
