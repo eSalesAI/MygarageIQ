@@ -401,7 +401,18 @@ function vcHTML(v){
 function svcHTML(vehicle,svc,st){
   const bc=st.status==='overdue'?'badge-red':st.status==='due-soon'?'badge-amber':st.status==='unknown'?'badge-gray':'badge-green';
   const fc=st.status==='overdue'?'#E24B4A':st.status==='due-soon'?'#BA7517':'#639922';
-  const due=st.status==='overdue'?`${Math.round(st.milesSince-svc.intervalMiles).toLocaleString()} mi overdue`:st.status==='unknown'?`Log first service to start tracking`:st.milesUntil>0?`in ~${Math.round(st.milesUntil).toLocaleString()} mi`:'due now';
+  // Calculate the mileage at which this service was due
+  const lastSvcRec=state.history.filter(h=>h.vehicleId===vehicle.id&&h.serviceId===svc.id).sort((a,b)=>b.mileage-a.mileage)[0];
+  const lastSvcMile=lastSvcRec?lastSvcRec.mileage:0;
+  const dueMile=lastSvcMile+svc.intervalMiles;
+  const milesOver=Math.round(vehicle.mileage-dueMile);
+  const due=st.status==='overdue'
+    ? `Due at ${dueMile.toLocaleString()} mi · ${milesOver.toLocaleString()} mi overdue`
+    : st.status==='unknown'
+    ? `Log first service to start tracking`
+    : st.milesUntil>0
+    ? `Due at ~${Math.round(vehicle.mileage+st.milesUntil).toLocaleString()} mi · in ~${Math.round(st.milesUntil).toLocaleString()} mi`
+    : 'Due now';
   const ignored=(vehicle.ignoredServices||[]).includes(svc.id);
   if(ignored) return `<div class="service-item" style="opacity:0.45">
     <div><div class="si-name" style="text-decoration:line-through">${escHtml(svc.name)} <span style="font-size:12px;font-weight:400;color:var(--text2)">· ${escHtml(vehicle.year+' '+vehicle.make+' '+vehicle.model)}</span></div>
