@@ -358,7 +358,12 @@ function vcHTML(v){
   const leaseDate=(v.leaseEndMonth&&v.leaseEndYear)?`${MONTHS_LIST[v.leaseEndMonth-1]} ${v.leaseEndYear}`:'';
   const leaseLabel=v.leaseType==='payout'?'Loan payout':v.leaseType==='lease'?'Lease end':'';
   const ps=photo?`<img src="${photo}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="vc-fallback" style="display:none">${fb}</div>`:`<div class="vc-fallback">${fb}</div>`;
-  return `<div class="vehicle-card" onclick="goToSchedule('${v.id}')"><div class="vc-photo-wrap">${ps}<button class="vc-photo-btn" onclick="event.stopPropagation();uploadPhoto('${v.id}')">📷 Change photo</button></div><div class="vc-body"><div class="vc-header-row"><div><div class="vc-name">${escHtml(v.year+' '+v.make+' '+v.model)}</div>${v.trim?`<div class="vc-trim">${escHtml(v.trim)}</div>`:''}</div><div style="display:flex;gap:4px"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editVehicle('${v.id}')">✏️ Edit</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteVehicle('${v.id}')">Remove</button></div></div><div class="vc-mileage">${Number(v.mileage).toLocaleString()} miles${v.nickname?' · '+escHtml(v.nickname):''}</div>${leaseLabel&&leaseDate?`<div class="vc-lease"><span class="vc-lease-label">${leaseLabel}:</span><span class="vc-lease-date">${leaseDate}</span>${lbadge}</div>`:''}<div class="vc-alerts">${ov?`<span class="badge badge-red">${ov} overdue</span>`:''}${ds?`<span class="badge badge-amber">${ds} due soon</span>`:''}${!ov&&!ds?'<span class="badge badge-green">All good</span>':''}</div></div></div>`;
+  return `<div class="vehicle-card" onclick="goToSchedule('${v.id}')"><div class="vc-photo-wrap">${ps}<button class="vc-photo-btn" onclick="event.stopPropagation();uploadPhoto('${v.id}')">📷 Change photo</button></div><div class="vc-body"><div class="vc-header-row"><div><div class="vc-name">${escHtml(v.year+' '+v.make+' '+v.model)}</div>${v.trim?`<div class="vc-trim">${escHtml(v.trim)}</div>`:''}</div><div style="display:flex;gap:4px"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editVehicle('${v.id}')">✏️ Edit</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteVehicle('${v.id}')">Remove</button></div></div><div class="vc-mileage">${Number(v.mileage).toLocaleString()} miles${v.nickname?' · '+escHtml(v.nickname):''}</div>${leaseLabel&&leaseDate?`<div class="vc-lease"><span class="vc-lease-label">${leaseLabel}:</span><span class="vc-lease-date">${leaseDate}</span>${lbadge}</div>`:''}<div class="vc-alerts">${ov?`<span class="badge badge-red">${ov} overdue</span>`:''}${ds?`<span class="badge badge-amber">${ds} due soon</span>`:''}${!ov&&!ds?'<span class="badge badge-green">All good</span>':''}</div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-sm" style="font-size:11px" onclick="event.stopPropagation();quickMileage('${v.id}')">🔢 Update mileage</button>
+        <button class="btn btn-sm" style="font-size:11px" onclick="event.stopPropagation();goToHistory('${v.id}')">📋 View history</button>
+      </div>
+    </div></div>`;
 }
 
 function svcHTML(vehicle,svc,st){
@@ -368,12 +373,24 @@ function svcHTML(vehicle,svc,st){
   return `<div class="service-item"><div><div class="si-name">${escHtml(svc.name)} <span style="font-size:12px;font-weight:400;color:var(--text2)">· ${escHtml(vehicle.year+' '+vehicle.make+' '+vehicle.model)}</span></div><div class="si-due">${due}${svc.note?' · '+escHtml(svc.note):''}</div><div class="progress-bar"><div class="progress-fill" style="width:${Math.round(st.pct*100)}%;background:${fc}"></div></div></div><span class="badge ${bc}">${st.label}</span><button class="btn btn-primary btn-sm" style="white-space:nowrap" onclick="logServiceQuick('${vehicle.id}','${svc.id}')">Log done</button></div>`;
 }
 
-function goToSchedule(id){window._schedTarget=id;document.querySelectorAll('.tab')[1].click();}
+function goToSchedule(id){
+  window._schedTarget=id;
+  // Click schedule tab
+  const tabs=document.querySelectorAll('.tab');
+  tabs.forEach(t=>t.classList.remove('active'));
+  tabs[1].classList.add('active');
+  document.querySelectorAll('[id^="view-"]').forEach(v=>v.style.display='none');
+  document.getElementById('view-schedule').style.display='block';
+  state.activeTab='schedule';
+  renderSchedule();
+}
 
 function renderSchedule(){
   const sel=document.getElementById('schedule-vehicle-filter');
+  const prevVal=sel.value;
   sel.innerHTML='<option value="all">All vehicles</option>'+state.vehicles.map(v=>`<option value="${v.id}">${escHtml(v.year+' '+v.make+' '+v.model)}</option>`).join('');
   if(window._schedTarget){sel.value=window._schedTarget;window._schedTarget=null;}
+  else if(prevVal){sel.value=prevVal;}
   const fv=sel.value||'all',vehicles=fv==='all'?state.vehicles:state.vehicles.filter(v=>v.id===fv);
   const list=document.getElementById('schedule-list');
   if(!vehicles.length){list.innerHTML='<div class="empty-state"><div class="empty-title">No vehicles yet</div></div>';return;}
@@ -384,13 +401,16 @@ function renderSchedule(){
 
 function renderHistory(){
   const sel=document.getElementById('history-vehicle-filter');
+  const prevVal=sel.value;
   sel.innerHTML='<option value="all">All vehicles</option>'+state.vehicles.map(v=>`<option value="${v.id}">${escHtml(v.year+' '+v.make+' '+v.model)}</option>`).join('');
+  if(window._histTarget){sel.value=window._histTarget;window._histTarget=null;}
+  else if(prevVal){sel.value=prevVal;}
   const fv=sel.value||'all',recs=state.history.filter(h=>fv==='all'||h.vehicleId===fv).sort((a,b)=>new Date(b.date)-new Date(a.date));
   const spent=recs.reduce((a,h)=>a+(parseFloat(h.cost)||0),0);
   document.getElementById('cost-summary').innerHTML=recs.length?`${recs.length} record${recs.length>1?'s':''} &nbsp;·&nbsp; Total spent: <strong>$${spent.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>`:'';
   const list=document.getElementById('history-list');
   if(!recs.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No service records yet</div></div>';return;}
-  list.innerHTML=recs.map(r=>{const v=state.vehicles.find(x=>x.id===r.vehicleId);const vn=v?escHtml(v.year+' '+v.make+' '+v.model):'Unknown';return`<div class="history-card"><div class="history-header"><div><div class="history-name">${escHtml(r.serviceName)}</div><div class="history-meta">${vn} · ${r.date} · ${Number(r.mileage).toLocaleString()} mi${r.shop?' · '+escHtml(r.shop):''}</div>${r.cost?`<span class="badge badge-blue" style="margin-top:6px;display:inline-flex">$${parseFloat(r.cost).toFixed(2)}</span>`:''}</div><button class="btn btn-sm btn-danger" onclick="deleteHistory('${r.id}')">Remove</button></div>${r.workDone?`<div class="history-detail"><div class="history-detail-label">What was done</div>${escHtml(r.workDone)}</div>`:''} ${r.notes?`<div class="history-detail"><div class="history-detail-label">Notes</div>${escHtml(r.notes)}</div>`:''}</div>`;}).join('');
+  list.innerHTML=recs.map(r=>{const v=state.vehicles.find(x=>x.id===r.vehicleId);const vn=v?escHtml(v.year+' '+v.make+' '+v.model):'Unknown';return`<div class="history-card"><div class="history-header"><div><div class="history-name">${escHtml(r.serviceName)}</div><div class="history-meta">${vn} · ${r.date} · ${Number(r.mileage).toLocaleString()} mi${r.shop?' · '+escHtml(r.shop):''}</div>${r.cost?`<span class="badge badge-blue" style="margin-top:6px;display:inline-flex">$${parseFloat(r.cost).toFixed(2)}</span>`:''}</div><div style="display:flex;gap:6px"><button class="btn btn-sm btn-outline" onclick="editHistory('${r.id}')">✏️ Edit</button><button class="btn btn-sm btn-danger" onclick="deleteHistory('${r.id}')">Remove</button></div></div>${r.workDone?`<div class="history-detail"><div class="history-detail-label">What was done</div>${escHtml(r.workDone)}</div>`:''} ${r.notes?`<div class="history-detail"><div class="history-detail-label">Notes</div>${escHtml(r.notes)}</div>`:''}</div>`;}).join('');
 }
 
 function openAddVehicle(){
@@ -477,6 +497,31 @@ async function saveEditVehicle(id){
   showToast('✅ Vehicle updated!');
 }
 
+function goToHistory(id){
+  window._histTarget=id;
+  const tabs=document.querySelectorAll('.tab');
+  tabs.forEach(t=>t.classList.remove('active'));
+  tabs[2].classList.add('active');
+  document.querySelectorAll('[id^="view-"]').forEach(v=>v.style.display='none');
+  document.getElementById('view-history').style.display='block';
+  state.activeTab='history';
+  renderHistory();
+}
+
+async function quickMileage(id){
+  const v=state.vehicles.find(x=>x.id===id);
+  if(!v)return;
+  const newMileage=prompt(`Update mileage for ${v.year} ${v.make} ${v.model}:\nCurrent: ${Number(v.mileage).toLocaleString()} miles\n\nEnter new mileage:`);
+  if(!newMileage)return;
+  const m=parseInt(newMileage.replace(/,/g,''));
+  if(isNaN(m)||m<=0){alert('Please enter a valid mileage.');return;}
+  if(m<v.mileage&&!confirm(`New mileage (${m.toLocaleString()}) is less than current (${v.mileage.toLocaleString()}). Continue?`))return;
+  v.mileage=m;
+  renderDashboard();
+  await saveVehicle(v);
+  showToast('✅ Mileage updated!');
+}
+
 async function deleteVehicle(id){
   if(!confirm('Remove this vehicle and all its records?'))return;
   state.vehicles=state.vehicles.filter(v=>v.id!==id);state.history=state.history.filter(h=>h.vehicleId!==id);
@@ -514,6 +559,68 @@ async function logService(){
   const v=state.vehicles.find(x=>x.id===vehicleId);if(v&&mileage>v.mileage){v.mileage=mileage;await saveVehicle(v);}
   closeModal();if(state.activeTab==='history')renderHistory();else renderDashboard();
   await saveHistory(record);showToast('✅ Service record saved!');
+}
+
+function editHistory(id){
+  const r=state.history.find(x=>x.id===id);
+  if(!r)return;
+  const allSvc=[];Object.values(SCHEDULES).forEach(sch=>sch.forEach(s=>{if(!allSvc.find(a=>a.id===s.id))allSvc.push(s);}));
+  showModal(`<div class="modal-title">Edit service record</div>
+    <div class="form-group"><label class="form-label">Vehicle</label>
+      <select id="eh-vehicle">${state.vehicles.map(v=>`<option value="${v.id}" ${v.id===r.vehicleId?'selected':''}>${escHtml(v.year+' '+v.make+' '+v.model)}</option>`).join('')}</select>
+    </div>
+    <div class="form-group"><label class="form-label">Service type</label>
+      <select id="eh-service">${allSvc.map(s=>`<option value="${s.id}" ${s.id===r.serviceId?'selected':''}>${escHtml(s.name)}</option>`).join('')}<option value="other" ${r.serviceId&&r.serviceId.startsWith('custom')?'selected':''}>Other / custom</option></select>
+    </div>
+    <div class="form-group" id="eh-custom-wrap" style="display:${r.serviceId&&r.serviceId.startsWith('custom')?'block':'none'}">
+      <label class="form-label">Custom service name</label>
+      <input id="eh-custom" value="${escHtml(r.serviceName||'')}">
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Date</label><input id="eh-date" type="date" value="${r.date||''}"></div>
+      <div class="form-group"><label class="form-label">Mileage</label><input id="eh-mileage" type="number" value="${r.mileage||''}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Total cost ($)</label><input id="eh-cost" type="number" step="0.01" value="${r.cost||''}"></div>
+      <div class="form-group"><label class="form-label">Shop / mechanic</label><input id="eh-shop" value="${escHtml(r.shop||'')}"></div>
+    </div>
+    <div class="form-group"><label class="form-label">What was done</label>
+      <textarea id="eh-workdone">${escHtml(r.workDone||'')}</textarea>
+    </div>
+    <div class="form-group"><label class="form-label">Notes</label>
+      <textarea id="eh-notes" style="min-height:60px">${escHtml(r.notes||'')}</textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditHistory('${r.id}')">Save changes</button>
+    </div>`);
+  document.getElementById('eh-service').addEventListener('change',function(){
+    document.getElementById('eh-custom-wrap').style.display=this.value==='other'?'block':'none';
+  });
+}
+
+async function saveEditHistory(id){
+  const r=state.history.find(x=>x.id===id);
+  if(!r)return;
+  const sid=document.getElementById('eh-service').value;
+  const isCustom=sid==='other';
+  const sname=isCustom?document.getElementById('eh-custom').value.trim():document.getElementById('eh-service').options[document.getElementById('eh-service').selectedIndex].text;
+  const date=document.getElementById('eh-date').value;
+  const mileage=parseInt(document.getElementById('eh-mileage').value);
+  if(!sname||!date||!mileage){alert('Please fill in service type, date, and mileage.');return;}
+  r.vehicleId=document.getElementById('eh-vehicle').value;
+  r.serviceId=isCustom?'custom_'+r.id:sid;
+  r.serviceName=sname;
+  r.date=date;
+  r.mileage=mileage;
+  r.cost=document.getElementById('eh-cost').value||null;
+  r.shop=document.getElementById('eh-shop').value.trim()||null;
+  r.workDone=document.getElementById('eh-workdone').value.trim()||null;
+  r.notes=document.getElementById('eh-notes').value.trim()||null;
+  closeModal();
+  renderHistory();
+  await saveHistory(r);
+  showToast('✅ Record updated!');
 }
 
 async function deleteHistory(id){
