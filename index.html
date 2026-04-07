@@ -513,24 +513,56 @@ function getLastService(v, sid){
 
 function getStatus(v, s){
   var last = getLastService(v, s.id);
-  if(!last){
-    // Never logged — unknown, don't mark overdue
-    return { status:'unknown', label:'Not logged', pct:0, dueMile:null, milesOver:0, milesUntil:s.intervalMiles };
+
+  if(last){
+    // We have a logged service — calculate from that point
+    var lastMile   = last.mileage;
+    var dueMile    = lastMile + s.intervalMiles;
+    var milesOver  = v.mileage - dueMile;
+    var milesUntil = dueMile - v.mileage;
+    var monthsSince = (new Date() - new Date(last.date)) / (1000*60*60*24*30);
+    var monthPct    = monthsSince / s.intervalMonths;
+    var milePct     = milesOver > 0 ? (v.mileage / dueMile) : (v.mileage / dueMile);
+    var pct         = Math.max(milePct, monthPct);
+    var status      = (milesOver > 0 || monthPct >= 1) ? 'overdue' : milesUntil <= s.intervalMiles * 0.2 ? 'due-soon' : 'ok';
+    var label       = status==='overdue' ? 'Overdue' : status==='due-soon' ? 'Due soon' : 'OK';
+    return { status:status, label:label, pct:Math.min(pct,1), dueMile:dueMile, milesOver:Math.round(milesOver), milesUntil:Math.round(milesUntil), estimated:false };
   }
-  var lastMile = last.mileage;
-  var dueMile  = lastMile + s.intervalMiles;
-  var milesOver = v.mileage - dueMile;
-  var milesUntil = dueMile - v.mileage;
 
-  // Also check months
-  var monthsSince = (new Date() - new Date(last.date)) / (1000*60*60*24*30);
-  var monthPct = monthsSince / s.intervalMonths;
-  var milePct  = milesOver > 0 ? (milesOver / s.intervalMiles) + 1 : v.mileage / dueMile;
-  var pct = Math.max(milePct, monthPct);
+  // No history — estimate using current mileage
+  // Figure out where we are in the service cycle based on current miles
+  // e.g. car at 45,000 miles, oil every 5,000 = last done ~at 45,000 (mod 5,000 = 0) so next at 50,000
+  // We use modulo to find the remainder in the current cycle
+  var milesMod    = v.mileage % s.intervalMiles;
+  var lastEstMile = v.mileage - milesMod;          // estimated last service mileage
+  var dueMile     = lastEstMile + s.intervalMiles;  // next due mileage
+  var milesUntil  = dueMile - v.mileage;
+  var milesOver   = v.mileage - dueMile;
+  var milePct     = milesMod / s.intervalMiles;
 
-  var status = milesOver > 0 || monthPct >= 1 ? 'overdue' : milesUntil <= s.intervalMiles * 0.2 ? 'due-soon' : 'ok';
-  var label  = status==='overdue' ? 'Overdue' : status==='due-soon' ? 'Due soon' : 'OK';
-  return { status:status, label:label, pct:Math.min(pct,1), dueMile:dueMile, milesOver:Math.round(milesOver), milesUntil:Math.round(milesUntil) };
+  // If remainder is 0, that means we just hit the interval — mark as due now
+  var status, label;
+  if(milesMod === 0){
+    status = 'due-soon'; label = 'Due now';
+    dueMile = v.mileage;
+    milesUntil = 0;
+  } else if(milePct >= 1){
+    status = 'overdue'; label = 'Overdue (est.)';
+  } else if(milePct >= 0.8){
+    status = 'due-soon'; label = 'Due soon (est.)';
+  } else {
+    status = 'ok'; label = 'OK (est.)';
+  }
+
+  return {
+    status:    status,
+    label:     label,
+    pct:       Math.min(milePct, 1),
+    dueMile:   dueMile,
+    milesOver: Math.max(0, Math.round(milesOver)),
+    milesUntil:Math.round(milesUntil),
+    estimated: true   // flag so we can show "estimated" note
+  };
 }
 
 function leaseInfo(v){
@@ -608,7 +640,7 @@ function vcHTML(v){
   var active=svcs.filter(function(s){ return ignoredIds.indexOf(s.id)<0; });
   var ov=active.filter(function(s){ return s.st.status==='overdue'; }).length;
   var ds=active.filter(function(s){ return s.st.status==='due-soon'; }).length;
-  var unk=active.filter(function(s){ return s.st.status==='unknown'; }).length;
+  var unk=0; // all services now estimated from mileage if not logged
   var totalSpent=Math.round(state.history.filter(function(h){ return h.vehicleId===v.id; }).reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0));
   var li=leaseInfo(v);
   var lbadge='';
@@ -645,15 +677,20 @@ function svcRowHTML(vehicle,svc,st){
   var ignored=(vehicle.ignoredServices||[]).indexOf(svc.id)>=0;
   var bc=st.status==='overdue'?'badge-red':st.status==='due-soon'?'badge-amber':st.status==='unknown'?'badge-gray':'badge-green';
   var fc=st.status==='overdue'?'#E24B4A':st.status==='due-soon'?'#BA7517':'#639922';
+  var est = st.estimated ? ' <span style="font-size:11px;color:var(--text3)">(estimated)</span>' : '';
   var due='';
   if(st.status==='overdue'){
-    due='Due at '+st.dueMile.toLocaleString()+' mi &nbsp;·&nbsp; <strong>'+st.milesOver.toLocaleString()+' mi overdue</strong>';
+    due='Due at '+st.dueMile.toLocaleString()+' mi &nbsp;·&nbsp; <strong>'+st.milesOver.toLocaleString()+' mi overdue</strong>'+est;
   } else if(st.status==='due-soon'){
-    due='Due at ~'+st.dueMile.toLocaleString()+' mi &nbsp;·&nbsp; in ~'+st.milesUntil.toLocaleString()+' mi';
+    if(st.milesUntil===0){
+      due='Due now'+est;
+    } else {
+      due='Due at ~'+st.dueMile.toLocaleString()+' mi &nbsp;·&nbsp; in ~'+st.milesUntil.toLocaleString()+' mi'+est;
+    }
   } else if(st.status==='unknown'){
     due='Log first service to start tracking';
   } else {
-    due='Due at ~'+st.dueMile.toLocaleString()+' mi &nbsp;·&nbsp; in ~'+st.milesUntil.toLocaleString()+' mi';
+    due='Due at ~'+st.dueMile.toLocaleString()+' mi &nbsp;·&nbsp; in ~'+st.milesUntil.toLocaleString()+' mi'+est;
   }
 
   if(ignored){
