@@ -371,52 +371,63 @@ function getFB(make){ return MAKE_FB[(make||'').toLowerCase()]||'🚗'; }
 
 // ── Service schedules ─────────────────────────────────
 var SCHEDULES={
-  default:[
-    {id:'oil',name:'Oil & filter change',intervalMiles:5000,intervalMonths:6},
+  // ── ELECTRIC VEHICLES ──────────────────────────────
+  ev:[
     {id:'tires',name:'Tire rotation',intervalMiles:6000,intervalMonths:6},
-    {id:'air_filter',name:'Engine air filter',intervalMiles:15000,intervalMonths:12},
+    {id:'brakes',name:'Brake inspection',intervalMiles:25000,intervalMonths:24,note:'Regenerative braking reduces wear significantly'},
     {id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},
-    {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
-    {id:'spark_plugs',name:'Spark plugs',intervalMiles:30000,intervalMonths:36},
-    {id:'coolant',name:'Coolant flush',intervalMiles:30000,intervalMonths:36},
-    {id:'transmission',name:'Transmission fluid',intervalMiles:30000,intervalMonths:36},
-    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:24},
-    {id:'timing_belt',name:'Timing belt/chain',intervalMiles:60000,intervalMonths:60},
-    {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
     {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
-    {id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}
+    {id:'battery_coolant',name:'Battery coolant flush',intervalMiles:100000,intervalMonths:60,note:'EV battery thermal management fluid'},
+    {id:'ac_service',name:'A/C desiccant replacement',intervalMiles:75000,intervalMonths:72},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:50000,intervalMonths:24,note:'Tesla recommends every 2 years'},
+    {id:'battery_check',name:'High-voltage battery inspection',intervalMiles:50000,intervalMonths:48},
+    {id:'alignment',name:'Wheel alignment check',intervalMiles:12000,intervalMonths:12}
   ],
-  fiat:[
-    {id:'oil',name:'Oil & filter change',intervalMiles:9000,intervalMonths:12,note:'Mopar/FCA full synthetic'},
-    {id:'tires',name:'Tire rotation',intervalMiles:6000,intervalMonths:6},
-    {id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},
-    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:20000,intervalMonths:18},
-    {id:'spark_plugs',name:'Spark plugs (iridium)',intervalMiles:30000,intervalMonths:36,note:'MultiAir engines sensitive'},
-    {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
-    {id:'coolant',name:'Coolant flush',intervalMiles:50000,intervalMonths:60,note:'FCA HOAT coolant only'},
-    {id:'transmission',name:'Transmission fluid (DCT)',intervalMiles:40000,intervalMonths:48,note:'TCT dual-clutch'},
-    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:24},
-    {id:'timing_belt',name:'Timing belt replacement',intervalMiles:60000,intervalMonths:60,note:'Interference engine — critical'},
-    {id:'multiair',name:'MultiAir actuator service',intervalMiles:60000,intervalMonths:60,note:'500, 500X, 500L'},
-    {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
+  // ── TESLA SPECIFIC ─────────────────────────────────
+  tesla:[
+    {id:'tires',name:'Tire rotation',intervalMiles:6250,intervalMonths:6},
+    {id:'brakes',name:'Brake inspection',intervalMiles:25000,intervalMonths:24,note:'Regen braking means much less wear'},
+    {id:'cabin_filter',name:'HEPA/cabin air filter',intervalMiles:15000,intervalMonths:12,note:'Model 3/Y: every 2 yrs. Model S/X: every 3 yrs'},
+    {id:'brake_fluid',name:'Brake fluid test/replace',intervalMiles:0,intervalMonths:24,note:'Tesla recommends testing every 2 years'},
+    {id:'ac_service',name:'A/C desiccant replacement',intervalMiles:0,intervalMonths:72,note:'Every 6 years (Model S/X)'},
+    {id:'battery_coolant',name:'Battery coolant flush',intervalMiles:0,intervalMonths:48,note:'Model S/X every 4 years'},
     {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
-    {id:'inspect_belts',name:'Serpentine belt',intervalMiles:50000,intervalMonths:60}
+    {id:'alignment',name:'Wheel alignment',intervalMiles:10000,intervalMonths:12},
+    {id:'battery_check',name:'Battery & drive unit check',intervalMiles:50000,intervalMonths:48}
   ],
+  // ── TOYOTA ─────────────────────────────────────────
   toyota:[
-    {id:'oil',name:'Oil & filter change',intervalMiles:10000,intervalMonths:12,note:'Full synthetic'},
+    {id:'oil',name:'Oil & filter change',intervalMiles:10000,intervalMonths:12,note:'Full synthetic (0W-20 or 5W-30)'},
     {id:'tires',name:'Tire rotation',intervalMiles:5000,intervalMonths:6},
     {id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},
     {id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},
     {id:'brakes',name:'Brake inspection',intervalMiles:30000,intervalMonths:30},
-    {id:'spark_plugs',name:'Spark plugs (iridium)',intervalMiles:60000,intervalMonths:60},
+    {id:'spark_plugs',name:'Spark plugs (iridium)',intervalMiles:60000,intervalMonths:60,note:'Iridium plugs last much longer'},
     {id:'coolant',name:'Coolant flush',intervalMiles:100000,intervalMonths:60},
     {id:'transmission',name:'Transmission fluid',intervalMiles:60000,intervalMonths:60},
     {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:45000,intervalMonths:36},
-    {id:'timing_belt',name:'Timing chain inspection',intervalMiles:80000,intervalMonths:84},
+    {id:'timing_belt',name:'Timing chain inspection',intervalMiles:80000,intervalMonths:84,note:'Toyota uses chains — no belt replacement needed'},
     {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
     {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
-    {id:'inspect_belts',name:'Serpentine belt',intervalMiles:80000,intervalMonths:72}
+    {id:'inspect_belts',name:'Serpentine belt',intervalMiles:80000,intervalMonths:72},
+    {id:'differential',name:'Differential fluid (AWD)',intervalMiles:30000,intervalMonths:36,note:'AWD/4WD models only'}
   ],
+  // ── TOYOTA PRIUS (Hybrid) ───────────────────────────
+  prius:[
+    {id:'oil',name:'Oil & filter change',intervalMiles:10000,intervalMonths:12,note:'0W-20 full synthetic'},
+    {id:'tires',name:'Tire rotation',intervalMiles:5000,intervalMonths:6},
+    {id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},
+    {id:'brakes',name:'Brake inspection',intervalMiles:30000,intervalMonths:30,note:'Regen braking reduces wear'},
+    {id:'coolant',name:'Coolant flush (engine)',intervalMiles:100000,intervalMonths:60},
+    {id:'inverter_coolant',name:'Inverter coolant flush',intervalMiles:100000,intervalMonths:60,note:'Hybrid inverter system specific'},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:45000,intervalMonths:36},
+    {id:'battery_check',name:'Hybrid battery inspection',intervalMiles:60000,intervalMonths:60},
+    {id:'spark_plugs',name:'Spark plugs (iridium)',intervalMiles:60000,intervalMonths:60},
+    {id:'battery',name:'12V battery test/replace',intervalMiles:50000,intervalMonths:48},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12}
+  ],
+  // ── HONDA ──────────────────────────────────────────
   honda:[
     {id:'oil',name:'Oil & filter change',intervalMiles:7500,intervalMonths:12},
     {id:'tires',name:'Tire rotation',intervalMiles:7500,intervalMonths:6},
@@ -427,11 +438,12 @@ var SCHEDULES={
     {id:'coolant',name:'Coolant flush',intervalMiles:60000,intervalMonths:60},
     {id:'transmission',name:'Transmission fluid',intervalMiles:30000,intervalMonths:36},
     {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:45000,intervalMonths:36},
-    {id:'timing_belt',name:'Timing belt',intervalMiles:60000,intervalMonths:60},
+    {id:'timing_belt',name:'Timing belt',intervalMiles:60000,intervalMonths:60,note:'Interference engine — critical, do not skip'},
     {id:'battery',name:'Battery test/replace',intervalMiles:45000,intervalMonths:48},
     {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
     {id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}
   ],
+  // ── FORD ───────────────────────────────────────────
   ford:[
     {id:'oil',name:'Oil & filter change',intervalMiles:7500,intervalMonths:12},
     {id:'tires',name:'Tire rotation',intervalMiles:10000,intervalMonths:6},
@@ -447,6 +459,17 @@ var SCHEDULES={
     {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
     {id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}
   ],
+  // ── FORD MACH-E / LIGHTNING (EV) ───────────────────
+  ford_ev:[
+    {id:'tires',name:'Tire rotation',intervalMiles:10000,intervalMonths:6},
+    {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:25000,intervalMonths:24},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:45000,intervalMonths:36},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'battery_check',name:'High-voltage battery inspection',intervalMiles:50000,intervalMonths:48},
+    {id:'alignment',name:'Wheel alignment',intervalMiles:12000,intervalMonths:12}
+  ],
+  // ── CHEVROLET ──────────────────────────────────────
   chevrolet:[
     {id:'oil',name:'Oil & filter change',intervalMiles:7500,intervalMonths:12},
     {id:'tires',name:'Tire rotation',intervalMiles:7500,intervalMonths:6},
@@ -462,46 +485,342 @@ var SCHEDULES={
     {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
     {id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}
   ],
+  // ── CHEVROLET BOLT (EV) ─────────────────────────────
+  bolt:[
+    {id:'tires',name:'Tire rotation',intervalMiles:7500,intervalMonths:6},
+    {id:'brakes',name:'Brake inspection',intervalMiles:25000,intervalMonths:24,note:'One-pedal driving reduces brake wear'},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:25000,intervalMonths:24},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:0,intervalMonths:60,note:'Every 5 years'},
+    {id:'coolant',name:'Battery coolant check',intervalMiles:150000,intervalMonths:60},
+    {id:'battery_check',name:'High-voltage battery inspection',intervalMiles:50000,intervalMonths:48}
+  ],
+  // ── BMW ────────────────────────────────────────────
   bmw:[
-    {id:'oil',name:'Oil & filter change',intervalMiles:10000,intervalMonths:12,note:'BMW full synthetic'},
+    {id:'oil',name:'Oil & filter change',intervalMiles:10000,intervalMonths:12,note:'BMW LL-01 or LL-04 full synthetic'},
     {id:'tires',name:'Tire rotation',intervalMiles:10000,intervalMonths:12},
     {id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},
     {id:'cabin_filter',name:'Cabin microfilter',intervalMiles:20000,intervalMonths:24},
     {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
     {id:'spark_plugs',name:'Spark plugs',intervalMiles:30000,intervalMonths:36},
     {id:'coolant',name:'Coolant flush',intervalMiles:60000,intervalMonths:60},
-    {id:'transmission',name:'Transmission fluid',intervalMiles:50000,intervalMonths:48},
-    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:24},
-    {id:'timing_belt',name:'Timing chain/VANOS',intervalMiles:60000,intervalMonths:60},
-    {id:'battery',name:'Battery test/register',intervalMiles:50000,intervalMonths:48},
+    {id:'transmission',name:'Transmission fluid (ZF)',intervalMiles:50000,intervalMonths:48,note:'Often called "lifetime" fluid but should be changed'},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:24,note:'BMW recommends every 2 years minimum'},
+    {id:'timing_belt',name:'Timing chain/VANOS service',intervalMiles:60000,intervalMonths:60,note:'N20/N26 engines: check for chain rattle'},
+    {id:'battery',name:'Battery test & register',intervalMiles:50000,intervalMonths:48,note:'Must register new battery to BMW system'},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'inspect_belts',name:'Serpentine/accessory belt',intervalMiles:60000,intervalMonths:60},
+    {id:'differential',name:'Differential fluid',intervalMiles:50000,intervalMonths:48}
+  ],
+  // ── BMW i3/i4/iX (EV) ──────────────────────────────
+  bmw_ev:[
+    {id:'tires',name:'Tire rotation',intervalMiles:10000,intervalMonths:12},
+    {id:'brakes',name:'Brake inspection',intervalMiles:30000,intervalMonths:30},
+    {id:'cabin_filter',name:'Cabin microfilter',intervalMiles:20000,intervalMonths:24},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:0,intervalMonths:24},
+    {id:'battery_check',name:'High-voltage battery inspection',intervalMiles:50000,intervalMonths:48},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'battery',name:'12V battery test/register',intervalMiles:50000,intervalMonths:48}
+  ],
+  // ── SUBARU ─────────────────────────────────────────
+  subaru:[
+    {id:'oil',name:'Oil & filter change',intervalMiles:6000,intervalMonths:6,note:'Subaru recommends 6 months or 6,000 mi — do not stretch'},
+    {id:'tires',name:'Tire rotation',intervalMiles:6000,intervalMonths:6,note:'All 4 tires must stay within 2/32" for AWD health'},
+    {id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},
+    {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
+    {id:'spark_plugs',name:'Spark plugs (iridium)',intervalMiles:60000,intervalMonths:60},
+    {id:'coolant',name:'Coolant flush',intervalMiles:30000,intervalMonths:30},
+    {id:'transmission',name:'CVT fluid',intervalMiles:25000,intervalMonths:30,note:'Critical — neglecting CVT fluid is the #1 Subaru killer'},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:30},
+    {id:'timing_belt',name:'Timing belt replacement',intervalMiles:90000,intervalMonths:60,note:'Interference engine — non-negotiable replacement'},
+    {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
+    {id:'differential',name:'Front/rear differential fluid',intervalMiles:25000,intervalMonths:30,note:'All 4 diffs on AWD models'},
     {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
     {id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}
   ],
-  subaru:[
-    {id:'oil',name:'Oil & filter change',intervalMiles:6000,intervalMonths:6},
+  // ── FIAT ───────────────────────────────────────────
+  fiat:[
+    {id:'oil',name:'Oil & filter change',intervalMiles:9000,intervalMonths:12,note:'Mopar full synthetic — FCA spec required'},
     {id:'tires',name:'Tire rotation',intervalMiles:6000,intervalMonths:6},
     {id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:20000,intervalMonths:18},
+    {id:'spark_plugs',name:'Spark plugs (iridium)',intervalMiles:30000,intervalMonths:36,note:'MultiAir engines are spark plug sensitive'},
+    {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
+    {id:'coolant',name:'Coolant flush',intervalMiles:50000,intervalMonths:60,note:'FCA HOAT coolant only — do not mix types'},
+    {id:'transmission',name:'Dual-clutch TCT fluid',intervalMiles:40000,intervalMonths:48,note:'Fiat TCT is notorious for issues when neglected'},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:24},
+    {id:'timing_belt',name:'Timing belt replacement',intervalMiles:60000,intervalMonths:60,note:'Interference engine — engine destroys itself if belt breaks'},
+    {id:'multiair',name:'MultiAir actuator service',intervalMiles:60000,intervalMonths:60,note:'500, 500X, 500L — unique to MultiAir engines'},
+    {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'inspect_belts',name:'Serpentine belt',intervalMiles:50000,intervalMonths:60}
+  ],
+  // ── NISSAN ─────────────────────────────────────────
+  nissan:[
+    {id:'oil',name:'Oil & filter change',intervalMiles:5000,intervalMonths:6},
+    {id:'tires',name:'Tire rotation',intervalMiles:5000,intervalMonths:6},
+    {id:'air_filter',name:'Engine air filter',intervalMiles:15000,intervalMonths:12},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},
+    {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
+    {id:'spark_plugs',name:'Spark plugs (platinum)',intervalMiles:30000,intervalMonths:36},
+    {id:'coolant',name:'Coolant flush',intervalMiles:30000,intervalMonths:36},
+    {id:'transmission',name:'CVT fluid',intervalMiles:30000,intervalMonths:36,note:'Nissan CVT is fragile — change fluid regularly or risk failure'},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:24},
+    {id:'timing_belt',name:'Timing chain inspection',intervalMiles:60000,intervalMonths:60},
+    {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}
+  ],
+  // ── NISSAN LEAF (EV) ────────────────────────────────
+  leaf:[
+    {id:'tires',name:'Tire rotation',intervalMiles:5000,intervalMonths:6},
+    {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:24},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'battery_check',name:'Battery health check',intervalMiles:25000,intervalMonths:24,note:'Leaf uses air-cooled battery — check capacity bars'},
+    {id:'battery',name:'12V battery test/replace',intervalMiles:50000,intervalMonths:48}
+  ],
+  // ── HYUNDAI / KIA ──────────────────────────────────
+  hyundai:[
+    {id:'oil',name:'Oil & filter change',intervalMiles:7500,intervalMonths:12},
+    {id:'tires',name:'Tire rotation',intervalMiles:7500,intervalMonths:6},
+    {id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},
+    {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
+    {id:'spark_plugs',name:'Spark plugs (iridium)',intervalMiles:60000,intervalMonths:60},
+    {id:'coolant',name:'Coolant flush',intervalMiles:60000,intervalMonths:60},
+    {id:'transmission',name:'Transmission/DCT fluid',intervalMiles:30000,intervalMonths:36,note:'Hyundai DCT requires more frequent fluid changes'},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:24},
+    {id:'timing_belt',name:'Timing chain inspection',intervalMiles:60000,intervalMonths:60},
+    {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}
+  ],
+  // ── HYUNDAI IONIQ / KIA EV6 (EV) ───────────────────
+  hyundai_ev:[
+    {id:'tires',name:'Tire rotation',intervalMiles:7500,intervalMonths:6},
+    {id:'brakes',name:'Brake inspection',intervalMiles:25000,intervalMonths:24},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:0,intervalMonths:24},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'battery_check',name:'High-voltage battery inspection',intervalMiles:50000,intervalMonths:48},
+    {id:'battery',name:'12V battery test/replace',intervalMiles:50000,intervalMonths:48}
+  ],
+  // ── VOLKSWAGEN / AUDI ──────────────────────────────
+  volkswagen:[
+    {id:'oil',name:'Oil & filter change',intervalMiles:10000,intervalMonths:12,note:'VW 502/504/507 spec full synthetic'},
+    {id:'tires',name:'Tire rotation',intervalMiles:10000,intervalMonths:6},
+    {id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},
+    {id:'cabin_filter',name:'Cabin air filter / pollen filter',intervalMiles:20000,intervalMonths:24},
+    {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
+    {id:'spark_plugs',name:'Spark plugs',intervalMiles:40000,intervalMonths:36,note:'TSI engines — check for carbon buildup'},
+    {id:'coolant',name:'Coolant flush (G13)',intervalMiles:30000,intervalMonths:36,note:'VW G13 coolant only'},
+    {id:'transmission',name:'DSG/transmission fluid',intervalMiles:40000,intervalMonths:40,note:'DSG fluid is critical — do not skip'},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:24,note:'VW recommends every 2 years'},
+    {id:'timing_belt',name:'Timing belt/chain service',intervalMiles:60000,intervalMonths:60,note:'Many VW/Audi have timing chains — check your specific model'},
+    {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'inspect_belts',name:'Serpentine/accessory belt',intervalMiles:60000,intervalMonths:60}
+  ],
+  // ── MERCEDES-BENZ ──────────────────────────────────
+  mercedes:[
+    {id:'oil',name:'Oil & filter change',intervalMiles:10000,intervalMonths:12,note:'MB 229.5 or 229.51 synthetic — use only approved spec'},
+    {id:'tires',name:'Tire rotation',intervalMiles:10000,intervalMonths:12},
+    {id:'air_filter',name:'Engine air filter',intervalMiles:20000,intervalMonths:24},
+    {id:'cabin_filter',name:'Combination filter',intervalMiles:20000,intervalMonths:24},
+    {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
+    {id:'spark_plugs',name:'Spark plugs',intervalMiles:30000,intervalMonths:36},
+    {id:'coolant',name:'Coolant flush',intervalMiles:30000,intervalMonths:36},
+    {id:'transmission',name:'7G-Tronic/9G fluid',intervalMiles:40000,intervalMonths:40,note:'Often called lifetime but should be serviced'},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:0,intervalMonths:24,note:'Mercedes recommends every 2 years regardless of miles'},
+    {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}
+  ],
+  // ── LEXUS ──────────────────────────────────────────
+  lexus:[
+    {id:'oil',name:'Oil & filter change',intervalMiles:10000,intervalMonths:12,note:'Lexus full synthetic (same as Toyota intervals)'},
+    {id:'tires',name:'Tire rotation',intervalMiles:5000,intervalMonths:6},
+    {id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},
+    {id:'brakes',name:'Brake inspection',intervalMiles:30000,intervalMonths:30},
+    {id:'spark_plugs',name:'Spark plugs (iridium)',intervalMiles:60000,intervalMonths:60},
+    {id:'coolant',name:'Coolant flush',intervalMiles:100000,intervalMonths:60},
+    {id:'transmission',name:'Transmission fluid',intervalMiles:60000,intervalMonths:60},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:45000,intervalMonths:36},
+    {id:'timing_belt',name:'Timing chain inspection',intervalMiles:80000,intervalMonths:84},
+    {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'inspect_belts',name:'Serpentine belt',intervalMiles:80000,intervalMonths:72}
+  ],
+  // ── JEEP / DODGE / RAM ─────────────────────────────
+  jeep:[
+    {id:'oil',name:'Oil & filter change',intervalMiles:8000,intervalMonths:12,note:'Mopar full synthetic recommended'},
+    {id:'tires',name:'Tire rotation',intervalMiles:6000,intervalMonths:6},
+    {id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:25000,intervalMonths:24},
+    {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
+    {id:'spark_plugs',name:'Spark plugs',intervalMiles:30000,intervalMonths:36},
+    {id:'coolant',name:'Coolant flush (HOAT)',intervalMiles:30000,intervalMonths:36,note:'Use only HOAT coolant'},
+    {id:'transmission',name:'Transmission fluid',intervalMiles:30000,intervalMonths:36},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:45000,intervalMonths:36},
+    {id:'timing_belt',name:'Timing chain service',intervalMiles:80000,intervalMonths:96},
+    {id:'transfer_case',name:'Transfer case fluid',intervalMiles:30000,intervalMonths:36,note:'4WD/AWD models'},
+    {id:'differential',name:'Front/rear differential fluid',intervalMiles:30000,intervalMonths:36},
+    {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}
+  ],
+  // ── MAZDA ──────────────────────────────────────────
+  mazda:[
+    {id:'oil',name:'Oil & filter change',intervalMiles:7500,intervalMonths:12,note:'Mazda recommends 0W-20 full synthetic'},
+    {id:'tires',name:'Tire rotation',intervalMiles:7500,intervalMonths:6},
+    {id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},
+    {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
+    {id:'spark_plugs',name:'Spark plugs (iridium)',intervalMiles:60000,intervalMonths:60},
+    {id:'coolant',name:'Coolant flush (FL22)',intervalMiles:45000,intervalMonths:36,note:'Mazda FL22 coolant required'},
+    {id:'transmission',name:'Automatic/manual fluid',intervalMiles:30000,intervalMonths:36},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:24},
+    {id:'timing_belt',name:'Timing chain inspection',intervalMiles:60000,intervalMonths:60},
+    {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}
+  ],
+  // ── GMC / CADILLAC / BUICK ─────────────────────────
+  gmc:[
+    {id:'oil',name:'Oil & filter change',intervalMiles:7500,intervalMonths:12},
+    {id:'tires',name:'Tire rotation',intervalMiles:7500,intervalMonths:6},
+    {id:'air_filter',name:'Engine air filter',intervalMiles:45000,intervalMonths:36},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:25000,intervalMonths:24},
+    {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
+    {id:'spark_plugs',name:'Spark plugs (iridium)',intervalMiles:100000,intervalMonths:60},
+    {id:'coolant',name:'Coolant flush (Dex-Cool)',intervalMiles:150000,intervalMonths:60,note:'Dex-Cool only'},
+    {id:'transmission',name:'Transmission fluid',intervalMiles:45000,intervalMonths:36},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:45000,intervalMonths:36},
+    {id:'timing_belt',name:'Timing chain service',intervalMiles:100000,intervalMonths:96},
+    {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}
+  ],
+  // ── VOLVO ──────────────────────────────────────────
+  volvo:[
+    {id:'oil',name:'Oil & filter change',intervalMiles:10000,intervalMonths:12,note:'Volvo VCC-RBS-2AE full synthetic'},
+    {id:'tires',name:'Tire rotation',intervalMiles:10000,intervalMonths:12},
+    {id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:20000,intervalMonths:24},
+    {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
+    {id:'spark_plugs',name:'Spark plugs',intervalMiles:30000,intervalMonths:36},
+    {id:'coolant',name:'Coolant flush',intervalMiles:60000,intervalMonths:60},
+    {id:'transmission',name:'Transmission fluid',intervalMiles:52500,intervalMonths:52},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:0,intervalMonths:24,note:'Every 2 years regardless of mileage'},
+    {id:'timing_belt',name:'Timing belt replacement',intervalMiles:105000,intervalMonths:84,note:'Interference engine — do not skip'},
+    {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12}
+  ],
+  // ── ACURA / INFINITI ───────────────────────────────
+  acura:[
+    {id:'oil',name:'Oil & filter change',intervalMiles:7500,intervalMonths:12},
+    {id:'tires',name:'Tire rotation',intervalMiles:7500,intervalMonths:6},
+    {id:'air_filter',name:'Engine air filter',intervalMiles:30000,intervalMonths:24},
+    {id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},
+    {id:'brakes',name:'Brake inspection',intervalMiles:25000,intervalMonths:24},
+    {id:'spark_plugs',name:'Spark plugs (iridium)',intervalMiles:60000,intervalMonths:60},
+    {id:'coolant',name:'Coolant flush',intervalMiles:60000,intervalMonths:60},
+    {id:'transmission',name:'Transmission fluid (SH-AWD)',intervalMiles:30000,intervalMonths:36,note:'SH-AWD models need more frequent fluid changes'},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:45000,intervalMonths:36},
+    {id:'timing_belt',name:'Timing chain inspection',intervalMiles:80000,intervalMonths:84},
+    {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12}
+  ],
+  // ── DEFAULT (fallback) ─────────────────────────────
+  default:[
+    {id:'oil',name:'Oil & filter change',intervalMiles:5000,intervalMonths:6},
+    {id:'tires',name:'Tire rotation',intervalMiles:6000,intervalMonths:6},
+    {id:'air_filter',name:'Engine air filter',intervalMiles:15000,intervalMonths:12},
     {id:'cabin_filter',name:'Cabin air filter',intervalMiles:15000,intervalMonths:12},
     {id:'brakes',name:'Brake inspection',intervalMiles:20000,intervalMonths:24},
     {id:'spark_plugs',name:'Spark plugs',intervalMiles:30000,intervalMonths:36},
     {id:'coolant',name:'Coolant flush',intervalMiles:30000,intervalMonths:36},
-    {id:'transmission',name:'Transmission fluid (CVT)',intervalMiles:25000,intervalMonths:30,note:'Critical for CVT'},
-    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:30},
-    {id:'timing_belt',name:'Timing belt',intervalMiles:90000,intervalMonths:60},
+    {id:'transmission',name:'Transmission fluid',intervalMiles:30000,intervalMonths:36},
+    {id:'brake_fluid',name:'Brake fluid flush',intervalMiles:30000,intervalMonths:24},
+    {id:'timing_belt',name:'Timing belt/chain',intervalMiles:60000,intervalMonths:60},
     {id:'battery',name:'Battery test/replace',intervalMiles:50000,intervalMonths:48},
-    {id:'differential',name:'Differential/AWD fluid',intervalMiles:25000,intervalMonths:30},
-    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12}
+    {id:'wiper_blades',name:'Wiper blades',intervalMiles:12000,intervalMonths:12},
+    {id:'inspect_belts',name:'Serpentine belt',intervalMiles:60000,intervalMonths:60}
   ]
 };
 
 var MAKES=['Acura','Audi','BMW','Buick','Cadillac','Chevrolet','Chrysler','Dodge','Fiat','Ford','Genesis','GMC','Honda','Hyundai','Infiniti','Jeep','Kia','Lexus','Lincoln','Mazda','Mercedes-Benz','Mitsubishi','Nissan','Ram','Subaru','Tesla','Toyota','Volkswagen','Volvo'];
+['Acura','Audi','BMW','Buick','Cadillac','Chevrolet','Chrysler','Dodge','Fiat','Ford','Genesis','GMC','Honda','Hyundai','Infiniti','Jeep','Kia','Lexus','Lincoln','Mazda','Mercedes-Benz','Mitsubishi','Nissan','Ram','Subaru','Tesla','Toyota','Volkswagen','Volvo'];
 var MONTHS_LIST=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 // ── Helpers ───────────────────────────────────────────
-function getSched(make){
-  var k=(make||'').toLowerCase();
-  var keys=Object.keys(SCHEDULES);
-  for(var i=0;i<keys.length;i++){ if(keys[i]!=='default'&&k.indexOf(keys[i])>=0) return SCHEDULES[keys[i]]; }
+function getSched(make, model){
+  var mk = (make||'').toLowerCase();
+  var mo = (model||'').toLowerCase();
+
+  // EV detection — check model name first
+  var evModels = ['model 3','model y','model s','model x','cybertruck','roadster',
+                  'leaf','ariya','ioniq 5','ioniq 6','ioniq6','ioniq5','ev6','ev9',
+                  'mach-e','mache','lightning','f-150 lightning',
+                  'bolt','bolt euv','silverado ev',
+                  'i4','ix','i3','i7','i5',
+                  'id.4','id4','id.3','id3',
+                  'eqb','eqc','eqs','eqe',
+                  'taycan','e-tron','etron','q4 e-tron',
+                  'xc40 recharge','c40 recharge',
+                  'lyriq','celestiq'];
+  var isEV = evModels.some(function(m){ return mo.indexOf(m) >= 0; });
+
+  // Tesla — always EV, use tesla-specific schedule
+  if(mk.indexOf('tesla') >= 0) return SCHEDULES.tesla;
+
+  // Nissan Leaf
+  if(mk.indexOf('nissan') >= 0 && mo.indexOf('leaf') >= 0) return SCHEDULES.leaf;
+
+  // Chevy Bolt
+  if(mk.indexOf('chevrolet') >= 0 && (mo.indexOf('bolt') >= 0)) return SCHEDULES.bolt;
+
+  // Ford EV (Mach-E, Lightning)
+  if(mk.indexOf('ford') >= 0 && isEV) return SCHEDULES.ford_ev;
+
+  // BMW EV (i3, i4, iX)
+  if(mk.indexOf('bmw') >= 0 && isEV) return SCHEDULES.bmw_ev;
+
+  // Hyundai/Kia EV
+  if((mk.indexOf('hyundai') >= 0 || mk.indexOf('kia') >= 0) && isEV) return SCHEDULES.hyundai_ev;
+
+  // Any other EV fallback
+  if(isEV) return SCHEDULES.ev;
+
+  // Toyota Prius (hybrid)
+  if(mk.indexOf('toyota') >= 0 && mo.indexOf('prius') >= 0) return SCHEDULES.prius;
+
+  // Make-specific schedules
+  if(mk.indexOf('toyota') >= 0) return SCHEDULES.toyota;
+  if(mk.indexOf('honda') >= 0) return SCHEDULES.honda;
+  if(mk.indexOf('ford') >= 0) return SCHEDULES.ford;
+  if(mk.indexOf('chevrolet') >= 0) return SCHEDULES.chevrolet;
+  if(mk.indexOf('bmw') >= 0) return SCHEDULES.bmw;
+  if(mk.indexOf('subaru') >= 0) return SCHEDULES.subaru;
+  if(mk.indexOf('fiat') >= 0) return SCHEDULES.fiat;
+  if(mk.indexOf('nissan') >= 0) return SCHEDULES.nissan;
+  if(mk.indexOf('hyundai') >= 0 || mk.indexOf('kia') >= 0) return SCHEDULES.hyundai;
+  if(mk.indexOf('volkswagen') >= 0 || mk.indexOf('audi') >= 0) return SCHEDULES.volkswagen;
+  if(mk.indexOf('mercedes') >= 0) return SCHEDULES.mercedes;
+  if(mk.indexOf('lexus') >= 0) return SCHEDULES.lexus;
+  if(mk.indexOf('jeep') >= 0 || mk.indexOf('dodge') >= 0 || mk.indexOf('ram') >= 0 || mk.indexOf('chrysler') >= 0) return SCHEDULES.jeep;
+  if(mk.indexOf('mazda') >= 0) return SCHEDULES.mazda;
+  if(mk.indexOf('gmc') >= 0 || mk.indexOf('cadillac') >= 0 || mk.indexOf('buick') >= 0) return SCHEDULES.gmc;
+  if(mk.indexOf('volvo') >= 0) return SCHEDULES.volvo;
+  if(mk.indexOf('acura') >= 0 || mk.indexOf('infiniti') >= 0) return SCHEDULES.acura;
+  if(mk.indexOf('lincoln') >= 0) return SCHEDULES.ford;
+  if(mk.indexOf('genesis') >= 0) return SCHEDULES.hyundai;
+  if(mk.indexOf('mitsubishi') >= 0) return SCHEDULES.default;
+
   return SCHEDULES.default;
 }
 
@@ -588,453 +907,10 @@ function setTab(tab,el){
 function renderDashboard(){
   var all=[];
   state.vehicles.forEach(function(v){
-    getSched(v.make).forEach(function(s){
+    getSched(v.make, v.model).forEach(function(s){
       var st=getStatus(v,s);
       all.push({vehicle:v,service:s,st:st});
     });
   });
 
-  var ignored_ov=all.filter(function(x){ return !(x.vehicle.ignoredServices||[]).includes(x.service.id) && x.st.status==='overdue'; });
-  var ignored_ds=all.filter(function(x){ return !(x.vehicle.ignoredServices||[]).includes(x.service.id) && x.st.status==='due-soon'; });
-  var spent=state.history.reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0);
-
-  document.getElementById('summary-grid').innerHTML=
-    '<div class="metric"><div class="metric-label">Vehicles</div><div class="metric-value">'+state.vehicles.length+'</div></div>'+
-    '<div class="metric"><div class="metric-label">Overdue</div><div class="metric-value" style="color:var(--red)">'+ignored_ov.length+'</div></div>'+
-    '<div class="metric"><div class="metric-label">Due soon</div><div class="metric-value" style="color:var(--amber)">'+ignored_ds.length+'</div></div>'+
-    '<div class="metric"><div class="metric-label">Total spent</div><div class="metric-value">$'+Math.round(spent).toLocaleString()+'</div></div>';
-
-  var vg=document.getElementById('vehicle-grid');
-  if(!state.vehicles.length){
-    vg.innerHTML='<div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-title">No vehicles yet</div><p>Click "+ Add vehicle" to get started.</p></div>';
-    document.getElementById('alerts-section').innerHTML='';
-    return;
-  }
-
-  var sortBy=(document.getElementById('vehicle-sort')||{}).value||'name';
-  var sorted=state.vehicles.slice();
-  if(sortBy==='name') sorted.sort(function(a,b){ return (a.make+a.model).localeCompare(b.make+b.model); });
-  else if(sortBy==='mileage') sorted.sort(function(a,b){ return b.mileage-a.mileage; });
-  else if(sortBy==='overdue') sorted.sort(function(a,b){
-    var oa=getSched(a.make).filter(function(s){ return getStatus(a,s).status==='overdue'; }).length;
-    var ob=getSched(b.make).filter(function(s){ return getStatus(b,s).status==='overdue'; }).length;
-    return ob-oa;
-  });
-
-  vg.innerHTML=sorted.map(function(v){ return vcHTML(v); }).join('');
-
-  var urgent=all.filter(function(x){
-    return !(x.vehicle.ignoredServices||[]).includes(x.service.id) && (x.st.status==='overdue'||x.st.status==='due-soon');
-  }).slice(0,8);
-
-  document.getElementById('alerts-section').innerHTML = urgent.length
-    ? '<hr class="sep"><div class="section-title">Needs attention now</div><div class="service-list">'+urgent.map(function(x){ return svcRowHTML(x.vehicle,x.service,x.st); }).join('')+'</div>'
-    : '';
-}
-
-function vcHTML(v){
-  var photo=v.customPhoto||getCarPhoto(v.make,v.model);
-  var fb=getFB(v.make);
-  var ignoredIds=v.ignoredServices||[];
-  var svcs=getSched(v.make).map(function(s){ return Object.assign({},s,{st:getStatus(v,s)}); });
-  var active=svcs.filter(function(s){ return ignoredIds.indexOf(s.id)<0; });
-  var ov=active.filter(function(s){ return s.st.status==='overdue'; }).length;
-  var ds=active.filter(function(s){ return s.st.status==='due-soon'; }).length;
-  var unk=0; // all services now estimated from mileage if not logged
-  var totalSpent=Math.round(state.history.filter(function(h){ return h.vehicleId===v.id; }).reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0));
-  var li=leaseInfo(v);
-  var lbadge='';
-  if(li){ if(li.months<=0) lbadge='<span class="badge badge-red">Ended</span>'; else if(li.months<=3) lbadge='<span class="badge badge-red">'+li.months+'mo left</span>'; else if(li.months<=6) lbadge='<span class="badge badge-amber">'+li.months+'mo left</span>'; else lbadge='<span class="badge badge-purple">'+li.months+'mo left</span>'; }
-  var leaseDate=(v.leaseEndMonth&&v.leaseEndYear)?MONTHS_LIST[v.leaseEndMonth-1]+' '+v.leaseEndYear:'';
-  var leaseLabel=v.leaseType==='payout'?'Loan payout':v.leaseType==='lease'?'Lease end':'';
-  var ps=photo?'<img src="'+photo+'" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="vc-fallback" style="display:none">'+fb+'</div>':'<div class="vc-fallback">'+fb+'</div>';
-  var badges='';
-  if(ov) badges+='<span class="badge badge-red">'+ov+' overdue</span>';
-  if(ds) badges+='<span class="badge badge-amber">'+ds+' due soon</span>';
-  if(!ov&&!ds&&unk) badges+='<span class="badge badge-gray">'+unk+' not logged</span>';
-  if(!ov&&!ds&&!unk) badges+='<span class="badge badge-green">All good</span>';
-
-  return '<div class="vehicle-card" onclick="goToSchedule(\''+v.id+'\')">'
-    +'<div class="vc-photo-wrap">'+ps+'<button class="vc-photo-btn" onclick="event.stopPropagation();uploadPhoto(\''+v.id+'\')">📷 Change photo</button></div>'
-    +'<div class="vc-body">'
-    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
-    +'<div><div class="vc-name">'+escHtml(v.year+' '+v.make+' '+v.model)+'</div>'+(v.trim?'<div class="vc-trim">'+escHtml(v.trim)+'</div>':'')+'</div>'
-    +'<div style="display:flex;gap:4px">'
-    +'<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editVehicle(\''+v.id+'\')">✏️</button>'
-    +'<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteVehicle(\''+v.id+'\')">Remove</button>'
-    +'</div></div>'
-    +'<div class="vc-mileage">'+Number(v.mileage).toLocaleString()+' miles'+(v.nickname?' · '+escHtml(v.nickname):'')+(totalSpent>0?' · <strong>$'+totalSpent.toLocaleString()+' spent</strong>':'')+'</div>'
-    +(leaseLabel&&leaseDate?'<div class="vc-lease"><span class="vc-lease-label">'+leaseLabel+':</span><span class="vc-lease-date">'+leaseDate+'</span>'+lbadge+'</div>':'')
-    +'<div class="vc-alerts">'+badges+'</div>'
-    +'<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'
-    +'<button class="btn btn-sm" style="font-size:11px" onclick="event.stopPropagation();quickMileage(\''+v.id+'\')">🔢 Update mileage</button>'
-    +'<button class="btn btn-sm" style="font-size:11px" onclick="event.stopPropagation();goToHistory(\''+v.id+'\')">📋 View history</button>'
-    +'</div>'
-    +'</div></div>';
-}
-
-function svcRowHTML(vehicle,svc,st){
-  var ignored=(vehicle.ignoredServices||[]).indexOf(svc.id)>=0;
-  var bc=st.status==='overdue'?'badge-red':st.status==='due-soon'?'badge-amber':st.status==='unknown'?'badge-gray':'badge-green';
-  var fc=st.status==='overdue'?'#E24B4A':st.status==='due-soon'?'#BA7517':'#639922';
-  var est = st.estimated ? ' <span style="font-size:11px;color:var(--text3)">(estimated)</span>' : '';
-  var due='';
-  if(st.status==='overdue'){
-    due='Due at '+st.dueMile.toLocaleString()+' mi &nbsp;·&nbsp; <strong>'+st.milesOver.toLocaleString()+' mi overdue</strong>'+est;
-  } else if(st.status==='due-soon'){
-    if(st.milesUntil===0){
-      due='Due now'+est;
-    } else {
-      due='Due at ~'+st.dueMile.toLocaleString()+' mi &nbsp;·&nbsp; in ~'+st.milesUntil.toLocaleString()+' mi'+est;
-    }
-  } else if(st.status==='unknown'){
-    due='Log first service to start tracking';
-  } else {
-    due='Due at ~'+st.dueMile.toLocaleString()+' mi &nbsp;·&nbsp; in ~'+st.milesUntil.toLocaleString()+' mi'+est;
-  }
-
-  if(ignored){
-    return '<div class="service-item" style="opacity:0.4">'
-      +'<div><div class="si-name" style="text-decoration:line-through">'+escHtml(svc.name)+'</div><div class="si-due">Ignored</div></div>'
-      +'<span class="badge badge-gray">Ignored</span>'
-      +'<button class="btn btn-sm btn-outline" onclick="toggleIgnore(\''+vehicle.id+'\',\''+svc.id+'\')">Unignore</button>'
-      +'</div>';
-  }
-
-  return '<div class="service-item">'
-    +'<div>'
-    +'<div class="si-name">'+escHtml(svc.name)+(svc!==vehicle?'':'')+' <span style="font-size:12px;font-weight:400;color:var(--text2)">· '+escHtml(vehicle.year+' '+vehicle.make+' '+vehicle.model)+'</span></div>'
-    +'<div class="si-due">'+due+(svc.note?' &nbsp;·&nbsp; '+escHtml(svc.note):'')+'</div>'
-    +(st.status!=='unknown'?'<div class="progress-bar"><div class="progress-fill" style="width:'+Math.round(st.pct*100)+'%;background:'+fc+'"></div></div>':'')
-    +'</div>'
-    +'<span class="badge '+bc+'">'+st.label+'</span>'
-    +'<div style="display:flex;gap:4px">'
-    +'<button class="btn btn-primary btn-sm" onclick="openLogService(\''+vehicle.id+'\',\''+svc.id+'\')">Log done</button>'
-    +'<button class="btn btn-sm btn-outline" style="font-size:11px" title="Ignore this service" onclick="toggleIgnore(\''+vehicle.id+'\',\''+svc.id+'\')">Ignore</button>'
-    +'</div>'
-    +'</div>';
-}
-
-// ── Navigation ────────────────────────────────────────
-function goToSchedule(id){
-  window._schedTarget=id;
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-  document.querySelectorAll('.tab')[1].classList.add('active');
-  document.querySelectorAll('[id^="view-"]').forEach(function(v){v.style.display='none';});
-  document.getElementById('view-schedule').style.display='block';
-  state.activeTab='schedule';
-  renderSchedule();
-}
-
-function goToHistory(id){
-  window._histTarget=id;
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-  document.querySelectorAll('.tab')[2].classList.add('active');
-  document.querySelectorAll('[id^="view-"]').forEach(function(v){v.style.display='none';});
-  document.getElementById('view-history').style.display='block';
-  state.activeTab='history';
-  renderHistory();
-}
-
-// ── Schedule ──────────────────────────────────────────
-function renderSchedule(){
-  var sel=document.getElementById('sched-filter');
-  var prev=sel.value;
-  sel.innerHTML='<option value="all">All vehicles</option>'+state.vehicles.map(function(v){ return '<option value="'+v.id+'">'+escHtml(v.year+' '+v.make+' '+v.model)+'</option>'; }).join('');
-  if(window._schedTarget){ sel.value=window._schedTarget; window._schedTarget=null; }
-  else if(prev){ sel.value=prev; }
-  var fv=sel.value||'all';
-  var vehicles=fv==='all'?state.vehicles:state.vehicles.filter(function(v){ return v.id===fv; });
-  var list=document.getElementById('schedule-list');
-  if(!vehicles.length){ list.innerHTML='<div class="empty-state"><div class="empty-title">No vehicles yet</div></div>'; return; }
-  var html='';
-  vehicles.forEach(function(v){
-    var ignoredIds=v.ignoredServices||[];
-    var svcs=getSched(v.make).map(function(s){ return Object.assign({},s,{st:getStatus(v,s)}); });
-    svcs.sort(function(a,b){
-      var aIgn=ignoredIds.indexOf(a.id)>=0?2:0;
-      var bIgn=ignoredIds.indexOf(b.id)>=0?2:0;
-      var aUnk=a.st.status==='unknown'?1:0;
-      var bUnk=b.st.status==='unknown'?1:0;
-      if((aIgn+aUnk)!==(bIgn+bUnk)) return (aIgn+aUnk)-(bIgn+bUnk);
-      return b.st.pct-a.st.pct;
-    });
-    if(fv==='all') html+='<div style="font-size:13px;font-weight:600;margin:1.25rem 0 .5rem;color:var(--text2)">'+escHtml(v.year+' '+v.make+' '+v.model)+' · '+Number(v.mileage).toLocaleString()+' mi</div>';
-    html+='<div class="service-list" style="margin-bottom:1rem">'+svcs.map(function(s){ return svcRowHTML(v,s,s.st); }).join('')+'</div>';
-  });
-  list.innerHTML=html;
-}
-
-// ── History ───────────────────────────────────────────
-function renderHistory(){
-  var sel=document.getElementById('hist-filter');
-  var prev=sel.value;
-  sel.innerHTML='<option value="all">All vehicles</option>'+state.vehicles.map(function(v){ return '<option value="'+v.id+'">'+escHtml(v.year+' '+v.make+' '+v.model)+'</option>'; }).join('');
-  if(window._histTarget){ sel.value=window._histTarget; window._histTarget=null; }
-  else if(prev){ sel.value=prev; }
-  var fv=sel.value||'all';
-  var recs=state.history.filter(function(h){ return fv==='all'||h.vehicleId===fv; }).sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
-  var spent=recs.reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0);
-  document.getElementById('cost-summary').innerHTML=recs.length?recs.length+' record'+(recs.length>1?'s':'')+' &nbsp;·&nbsp; Total spent: <strong>$'+spent.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong>':'';
-  var list=document.getElementById('history-list');
-  if(!recs.length){ list.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No service records yet</div></div>'; return; }
-  list.innerHTML=recs.map(function(r){
-    var v=state.vehicles.find(function(x){ return x.id===r.vehicleId; });
-    var vn=v?escHtml(v.year+' '+v.make+' '+v.model):'Unknown';
-    return '<div class="history-card">'
-      +'<div class="history-header">'
-      +'<div>'
-      +'<div class="history-name">'+escHtml(r.serviceName)+'</div>'
-      +'<div class="history-meta">'+vn+' · '+r.date+' · '+Number(r.mileage).toLocaleString()+' mi'+(r.shop?' · '+escHtml(r.shop):'')+'</div>'
-      +(r.cost?'<span class="badge badge-blue" style="margin-top:6px;display:inline-flex">$'+parseFloat(r.cost).toFixed(2)+'</span>':'')
-      +'</div>'
-      +'<div style="display:flex;gap:6px">'
-      +'<button class="btn btn-sm btn-outline" onclick="editHistory(\''+r.id+'\')">✏️ Edit</button>'
-      +'<button class="btn btn-sm btn-danger" onclick="deleteHistory(\''+r.id+'\')">Remove</button>'
-      +'</div></div>'
-      +(r.workDone?'<div class="history-detail"><div class="history-detail-label">What was done</div>'+escHtml(r.workDone)+'</div>':'')
-      +(r.notes?'<div class="history-detail"><div class="history-detail-label">Notes</div>'+escHtml(r.notes)+'</div>':'')
-      +'</div>';
-  }).join('');
-}
-
-// ── Vehicle CRUD ──────────────────────────────────────
-function openAddVehicle(){
-  var years=[];for(var y=2026;y>=1990;y--)years.push(y);
-  var mOpts=MONTHS_LIST.map(function(m,i){ return '<option value="'+(i+1)+'">'+m+'</option>'; }).join('');
-  var yOpts='';for(var y=2024;y<=2035;y++) yOpts+='<option value="'+y+'">'+y+'</option>';
-  showModal('<div class="modal-title">Add a vehicle</div>'
-    +'<div class="form-row"><div class="form-group"><label class="form-label">Year</label><select id="v-year">'+years.map(function(y){ return '<option value="'+y+'">'+y+'</option>'; }).join('')+'</select></div>'
-    +'<div class="form-group"><label class="form-label">Make</label><select id="v-make">'+MAKES.map(function(m){ return '<option value="'+m+'">'+m+'</option>'; }).join('')+'</select></div></div>'
-    +'<div class="form-row"><div class="form-group"><label class="form-label">Model</label><input id="v-model" placeholder="Camry, Frontier, Civic..."></div>'
-    +'<div class="form-group"><label class="form-label">Trim</label><input id="v-trim" placeholder="LE, SV, Sport..."></div></div>'
-    +'<div class="form-row"><div class="form-group"><label class="form-label">Current mileage</label><input id="v-mileage" type="number" placeholder="45000"></div>'
-    +'<div class="form-group"><label class="form-label">Nickname</label><input id="v-nickname" placeholder="My daily driver"></div></div>'
-    +'<hr style="border:none;border-top:1px solid var(--border);margin:.75rem 0">'
-    +'<div class="form-group"><label class="form-label">Lease / Loan type</label><select id="v-lease-type"><option value="">Owned outright</option><option value="lease">Lease</option><option value="payout">Loan payout</option></select></div>'
-    +'<div id="v-lease-fields" style="display:none"><div class="form-row"><div class="form-group"><label class="form-label">End month</label><select id="v-lease-month">'+mOpts+'</select></div><div class="form-group"><label class="form-label">End year</label><select id="v-lease-year">'+yOpts+'</select></div></div></div>'
-    +'<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="addVehicle()">Add vehicle</button></div>');
-  document.getElementById('v-lease-type').addEventListener('change',function(){ document.getElementById('v-lease-fields').style.display=this.value?'block':'none'; });
-}
-
-function addVehicle(){
-  var model=document.getElementById('v-model').value.trim();
-  var mileage=parseInt(document.getElementById('v-mileage').value);
-  if(!model||!mileage){ alert('Please fill in model and mileage.'); return; }
-  var leaseType=document.getElementById('v-lease-type').value;
-  var v={
-    id:Date.now().toString(),
-    year:document.getElementById('v-year').value,
-    make:document.getElementById('v-make').value,
-    model:model,
-    trim:document.getElementById('v-trim').value.trim(),
-    mileage:mileage,
-    nickname:document.getElementById('v-nickname').value.trim(),
-    leaseType:leaseType,
-    leaseEndMonth:leaseType?parseInt(document.getElementById('v-lease-month').value):null,
-    leaseEndYear:leaseType?parseInt(document.getElementById('v-lease-year').value):null,
-    customPhoto:null,
-    ignoredServices:[]
-  };
-  state.vehicles.push(v);
-  closeModal(); renderDashboard();
-  dbSaveVehicle(v); showToast('✅ Vehicle saved!');
-}
-
-function editVehicle(id){
-  var v=state.vehicles.find(function(x){ return x.id===id; });
-  if(!v) return;
-  var years=[];for(var y=2026;y>=1990;y--)years.push(y);
-  var mOpts=MONTHS_LIST.map(function(m,i){ return '<option value="'+(i+1)+'" '+(v.leaseEndMonth===i+1?'selected':'')+'>'+m+'</option>'; }).join('');
-  var yOpts='';for(var y=2024;y<=2035;y++) yOpts+='<option value="'+y+'" '+(v.leaseEndYear===y?'selected':'')+'>'+y+'</option>';
-  showModal('<div class="modal-title">Edit vehicle</div>'
-    +'<div class="form-row"><div class="form-group"><label class="form-label">Year</label><select id="v-year">'+years.map(function(y){ return '<option value="'+y+'" '+(v.year==y?'selected':'')+'>'+y+'</option>'; }).join('')+'</select></div>'
-    +'<div class="form-group"><label class="form-label">Make</label><select id="v-make">'+MAKES.map(function(m){ return '<option value="'+m+'" '+(v.make===m?'selected':'')+'>'+m+'</option>'; }).join('')+'</select></div></div>'
-    +'<div class="form-row"><div class="form-group"><label class="form-label">Model</label><input id="v-model" value="'+escHtml(v.model||'')+'"></div>'
-    +'<div class="form-group"><label class="form-label">Trim</label><input id="v-trim" value="'+escHtml(v.trim||'')+'"></div></div>'
-    +'<div class="form-row"><div class="form-group"><label class="form-label">Current mileage</label><input id="v-mileage" type="number" value="'+v.mileage+'"></div>'
-    +'<div class="form-group"><label class="form-label">Nickname</label><input id="v-nickname" value="'+escHtml(v.nickname||'')+'"></div></div>'
-    +'<hr style="border:none;border-top:1px solid var(--border);margin:.75rem 0">'
-    +'<div class="form-group"><label class="form-label">Lease / Loan type</label><select id="v-lease-type"><option value="" '+((!v.leaseType)?'selected':'')+'>Owned outright</option><option value="lease" '+(v.leaseType==='lease'?'selected':'')+'>Lease</option><option value="payout" '+(v.leaseType==='payout'?'selected':'')+'>Loan payout</option></select></div>'
-    +'<div id="v-lease-fields" style="display:'+(v.leaseType?'block':'none')+'"><div class="form-row"><div class="form-group"><label class="form-label">End month</label><select id="v-lease-month">'+mOpts+'</select></div><div class="form-group"><label class="form-label">End year</label><select id="v-lease-year">'+yOpts+'</select></div></div></div>'
-    +'<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveEditVehicle(\''+id+'\')">Save changes</button></div>');
-  document.getElementById('v-lease-type').addEventListener('change',function(){ document.getElementById('v-lease-fields').style.display=this.value?'block':'none'; });
-}
-
-function saveEditVehicle(id){
-  var v=state.vehicles.find(function(x){ return x.id===id; });
-  if(!v) return;
-  var model=document.getElementById('v-model').value.trim();
-  var mileage=parseInt(document.getElementById('v-mileage').value);
-  if(!model||!mileage){ alert('Please fill in model and mileage.'); return; }
-  var leaseType=document.getElementById('v-lease-type').value;
-  v.year=document.getElementById('v-year').value;
-  v.make=document.getElementById('v-make').value;
-  v.model=model;
-  v.trim=document.getElementById('v-trim').value.trim();
-  v.mileage=mileage;
-  v.nickname=document.getElementById('v-nickname').value.trim();
-  v.leaseType=leaseType;
-  v.leaseEndMonth=leaseType?parseInt(document.getElementById('v-lease-month').value):null;
-  v.leaseEndYear=leaseType?parseInt(document.getElementById('v-lease-year').value):null;
-  closeModal(); renderDashboard();
-  dbSaveVehicle(v); showToast('✅ Vehicle updated!');
-}
-
-function deleteVehicle(id){
-  if(!confirm('Remove this vehicle and all its records?')) return;
-  state.vehicles=state.vehicles.filter(function(v){ return v.id!==id; });
-  state.history=state.history.filter(function(h){ return h.vehicleId!==id; });
-  renderDashboard(); dbDeleteVehicle(id); showToast('Vehicle removed.');
-}
-
-function quickMileage(id){
-  var v=state.vehicles.find(function(x){ return x.id===id; });
-  if(!v) return;
-  var val=prompt('Update mileage for '+v.year+' '+v.make+' '+v.model+'\nCurrent: '+Number(v.mileage).toLocaleString()+' miles\n\nEnter new mileage:');
-  if(!val) return;
-  var m=parseInt(val.replace(/,/g,''));
-  if(isNaN(m)||m<=0){ alert('Please enter a valid mileage.'); return; }
-  if(m<v.mileage&&!confirm('New mileage ('+m.toLocaleString()+') is less than current ('+v.mileage.toLocaleString()+'). Continue?')) return;
-  v.mileage=m;
-  renderDashboard(); dbSaveVehicle(v); showToast('✅ Mileage updated!');
-}
-
-function uploadPhoto(vehicleId){
-  var inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
-  inp.onchange=function(e){
-    var file=e.target.files[0]; if(!file) return;
-    var img=new Image(); var url=URL.createObjectURL(file);
-    img.onload=function(){
-      var canvas=document.createElement('canvas');
-      var MAX=600; var w=img.width,h=img.height;
-      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
-      canvas.width=w;canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      var dataUrl=canvas.toDataURL('image/jpeg',.75);
-      URL.revokeObjectURL(url);
-      var v=state.vehicles.find(function(x){ return x.id===vehicleId; });
-      if(v){ v.customPhoto=dataUrl; renderDashboard(); dbSaveVehicle(v); showToast('📷 Photo saved!'); }
-    };
-    img.src=url;
-  };
-  inp.click();
-}
-
-function toggleIgnore(vehicleId,serviceId){
-  var v=state.vehicles.find(function(x){ return x.id===vehicleId; });
-  if(!v) return;
-  if(!v.ignoredServices) v.ignoredServices=[];
-  var idx=v.ignoredServices.indexOf(serviceId);
-  if(idx>=0){ v.ignoredServices.splice(idx,1); showToast('Service restored.'); }
-  else { v.ignoredServices.push(serviceId); showToast('Service ignored.'); }
-  if(state.activeTab==='schedule') renderSchedule(); else renderDashboard();
-  dbSaveVehicle(v);
-}
-
-// ── Log service ───────────────────────────────────────
-function openLogService(vehicleId, serviceId){
-  if(!state.vehicles.length){ alert('Add a vehicle first.'); return; }
-  var today=new Date().toISOString().split('T')[0];
-  var allSvc=[];
-  Object.values(SCHEDULES).forEach(function(sch){ sch.forEach(function(s){ if(!allSvc.find(function(a){ return a.id===s.id; })) allSvc.push(s); }); });
-  showModal('<div class="modal-title">Log a service</div>'
-    +'<div class="form-group"><label class="form-label">Vehicle</label><select id="ls-vehicle">'+state.vehicles.map(function(v){ return '<option value="'+v.id+'" '+(v.id===vehicleId?'selected':'')+'>'+escHtml(v.year+' '+v.make+' '+v.model)+'</option>'; }).join('')+'</select></div>'
-    +'<div class="form-group"><label class="form-label">Service type</label><select id="ls-service">'+allSvc.map(function(s){ return '<option value="'+s.id+'" '+(s.id===serviceId?'selected':'')+'>'+escHtml(s.name)+'</option>'; }).join('')+'<option value="other">Other / custom</option></select></div>'
-    +'<div class="form-group" id="ls-custom-wrap" style="display:none"><label class="form-label">Custom service name</label><input id="ls-custom" placeholder="e.g. Alignment, AC recharge..."></div>'
-    +'<div class="form-row"><div class="form-group"><label class="form-label">Date</label><input id="ls-date" type="date" value="'+today+'"></div>'
-    +'<div class="form-group"><label class="form-label">Mileage at service</label><input id="ls-mileage" type="number" placeholder="45000"></div></div>'
-    +'<div class="form-row"><div class="form-group"><label class="form-label">Total cost ($)</label><input id="ls-cost" type="number" step="0.01" placeholder="0.00"></div>'
-    +'<div class="form-group"><label class="form-label">Shop / mechanic</label><input id="ls-shop" placeholder="Dealer, Jiffy Lube..."></div></div>'
-    +'<div class="form-group"><label class="form-label">What was done</label><textarea id="ls-workdone" placeholder="e.g. Replaced 5W-30 synthetic oil, new OEM filter, reset oil life monitor..."></textarea></div>'
-    +'<div class="form-group"><label class="form-label">Tech notes</label><textarea id="ls-notes" placeholder="e.g. Tech noticed brake pads at 3mm." style="min-height:60px"></textarea></div>'
-    +'<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="logService()">Save record</button></div>');
-  document.getElementById('ls-service').addEventListener('change',function(){ document.getElementById('ls-custom-wrap').style.display=this.value==='other'?'block':'none'; });
-  var vSel=document.getElementById('ls-vehicle'),mFld=document.getElementById('ls-mileage');
-  function prefill(){ var v=state.vehicles.find(function(x){ return x.id===vSel.value; }); if(v&&!mFld.value) mFld.value=v.mileage; }
-  prefill(); vSel.addEventListener('change',prefill);
-}
-
-function logService(){
-  var vehicleId=document.getElementById('ls-vehicle').value;
-  var sid=document.getElementById('ls-service').value;
-  var isCustom=sid==='other';
-  var sname=isCustom?document.getElementById('ls-custom').value.trim():document.getElementById('ls-service').options[document.getElementById('ls-service').selectedIndex].text;
-  var date=document.getElementById('ls-date').value;
-  var mileage=parseInt(document.getElementById('ls-mileage').value);
-  var cost=document.getElementById('ls-cost').value;
-  var shop=document.getElementById('ls-shop').value.trim();
-  var workDone=document.getElementById('ls-workdone').value.trim();
-  var notes=document.getElementById('ls-notes').value.trim();
-  if(!sname||!date||!mileage){ alert('Please fill in service type, date, and mileage.'); return; }
-  var record={id:Date.now().toString(),vehicleId:vehicleId,serviceId:isCustom?'custom_'+Date.now():sid,serviceName:sname,date:date,mileage:mileage,cost:cost||null,shop:shop||null,workDone:workDone||null,notes:notes||null};
-  state.history.push(record);
-  var v=state.vehicles.find(function(x){ return x.id===vehicleId; });
-  if(v&&mileage>v.mileage){ v.mileage=mileage; dbSaveVehicle(v); }
-  closeModal();
-  if(state.activeTab==='history') renderHistory(); else renderDashboard();
-  dbSaveHistory(record); showToast('✅ Service record saved!');
-}
-
-function editHistory(id){
-  var r=state.history.find(function(x){ return x.id===id; });
-  if(!r) return;
-  var allSvc=[];
-  Object.values(SCHEDULES).forEach(function(sch){ sch.forEach(function(s){ if(!allSvc.find(function(a){ return a.id===s.id; })) allSvc.push(s); }); });
-  showModal('<div class="modal-title">Edit service record</div>'
-    +'<div class="form-group"><label class="form-label">Vehicle</label><select id="eh-vehicle">'+state.vehicles.map(function(v){ return '<option value="'+v.id+'" '+(v.id===r.vehicleId?'selected':'')+'>'+escHtml(v.year+' '+v.make+' '+v.model)+'</option>'; }).join('')+'</select></div>'
-    +'<div class="form-group"><label class="form-label">Service type</label><select id="eh-service">'+allSvc.map(function(s){ return '<option value="'+s.id+'" '+(s.id===r.serviceId?'selected':'')+'>'+escHtml(s.name)+'</option>'; }).join('')+'<option value="other" '+(r.serviceId&&r.serviceId.indexOf('custom')===0?'selected':'')+'>Other / custom</option></select></div>'
-    +'<div class="form-group" id="eh-custom-wrap" style="display:'+(r.serviceId&&r.serviceId.indexOf('custom')===0?'block':'none')+'"><label class="form-label">Custom name</label><input id="eh-custom" value="'+escHtml(r.serviceName||'')+'"></div>'
-    +'<div class="form-row"><div class="form-group"><label class="form-label">Date</label><input id="eh-date" type="date" value="'+r.date+'"></div>'
-    +'<div class="form-group"><label class="form-label">Mileage</label><input id="eh-mileage" type="number" value="'+r.mileage+'"></div></div>'
-    +'<div class="form-row"><div class="form-group"><label class="form-label">Cost ($)</label><input id="eh-cost" type="number" step="0.01" value="'+(r.cost||'')+'"></div>'
-    +'<div class="form-group"><label class="form-label">Shop</label><input id="eh-shop" value="'+escHtml(r.shop||'')+'"></div></div>'
-    +'<div class="form-group"><label class="form-label">What was done</label><textarea id="eh-workdone">'+escHtml(r.workDone||'')+'</textarea></div>'
-    +'<div class="form-group"><label class="form-label">Notes</label><textarea id="eh-notes" style="min-height:60px">'+escHtml(r.notes||'')+'</textarea></div>'
-    +'<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveEditHistory(\''+id+'\')">Save changes</button></div>');
-  document.getElementById('eh-service').addEventListener('change',function(){ document.getElementById('eh-custom-wrap').style.display=this.value==='other'?'block':'none'; });
-}
-
-function saveEditHistory(id){
-  var r=state.history.find(function(x){ return x.id===id; });
-  if(!r) return;
-  var sid=document.getElementById('eh-service').value;
-  var isCustom=sid==='other';
-  var sname=isCustom?document.getElementById('eh-custom').value.trim():document.getElementById('eh-service').options[document.getElementById('eh-service').selectedIndex].text;
-  var date=document.getElementById('eh-date').value;
-  var mileage=parseInt(document.getElementById('eh-mileage').value);
-  if(!sname||!date||!mileage){ alert('Please fill in service, date, and mileage.'); return; }
-  r.vehicleId=document.getElementById('eh-vehicle').value;
-  r.serviceId=isCustom?'custom_'+r.id:sid;
-  r.serviceName=sname; r.date=date; r.mileage=mileage;
-  r.cost=document.getElementById('eh-cost').value||null;
-  r.shop=document.getElementById('eh-shop').value.trim()||null;
-  r.workDone=document.getElementById('eh-workdone').value.trim()||null;
-  r.notes=document.getElementById('eh-notes').value.trim()||null;
-  closeModal(); renderHistory();
-  dbSaveHistory(r); showToast('✅ Record updated!');
-}
-
-function deleteHistory(id){
-  if(!confirm('Remove this record?')) return;
-  state.history=state.history.filter(function(h){ return h.id!==id; });
-  renderHistory(); dbDeleteHistory(id); showToast('Record removed.');
-}
-
-// ── Modal ─────────────────────────────────────────────
-function showModal(html){
-  document.getElementById('modal-container').innerHTML='<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">'+html+'</div></div>';
-}
-function closeModal(){ document.getElementById('modal-container').innerHTML=''; }
-
-// ── Boot ──────────────────────────────────────────────
-var savedURL = getSavedURL();
-if(savedURL){
-  DB_URL = savedURL;
-  showApp();
-} else {
-  document.getElementById('setup-wrap').style.display = 'flex';
-}
-</script>
-</body>
-</html>
+  var ignored_ov=all.filter(function(x){ return !(x.vehicle.ignoredServices||[]).i
