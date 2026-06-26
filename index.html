@@ -942,4 +942,151 @@ function saveEdit(id){
   v.year=document.getElementById('vy').value; v.make=document.getElementById('vmk').value;
   v.model=mo; v.trim=document.getElementById('vtr').value.trim();
   v.mileage=mi; v.nickname=document.getElementById('vni').value.trim();
-  v.lea
+  v.leaseType=lt; v.leaseEndMonth=lt?parseInt(document.getElementById('vlm').value):null; v.leaseEndYear=lt?parseInt(document.getElementById('vly').value):null;
+  closeModal(); renderDashboard();
+  dbSaveV(v); showToast('✅ Updated!');
+}
+
+function deleteVehicle(id){
+  if(!confirm('Remove this vehicle and all its records?')) return;
+  state.vehicles=state.vehicles.filter(function(v){ return v.id!==id; });
+  state.history=state.history.filter(function(h){ return h.vehicleId!==id; });
+  renderDashboard(); dbDelV(id); showToast('Removed.');
+}
+
+function quickMileage(id){
+  var v=state.vehicles.find(function(x){ return x.id===id; });
+  if(!v) return;
+  var val=prompt('Update mileage for '+v.year+' '+v.make+' '+v.model+'\nCurrent: '+Number(v.mileage).toLocaleString()+' miles\n\nNew mileage:');
+  if(!val) return;
+  var m=parseInt(val.replace(/,/g,''));
+  if(isNaN(m)||m<=0){ alert('Invalid mileage.'); return; }
+  if(m<v.mileage&&!confirm('New mileage is lower than current. Continue?')) return;
+  v.mileage=m; renderDashboard(); dbSaveV(v); showToast('✅ Mileage updated!');
+}
+
+function uploadPhoto(vehicleId){
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=function(e){
+    var file=e.target.files[0]; if(!file) return;
+    var img=new Image(); var url=URL.createObjectURL(file);
+    img.onload=function(){
+      var c=document.createElement('canvas'),MAX=600,w=img.width,h=img.height;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;} c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      var v=state.vehicles.find(function(x){ return x.id===vehicleId; });
+      if(v){ v.customPhoto=c.toDataURL('image/jpeg',.75); renderDashboard(); dbSaveV(v); showToast('📷 Photo saved!'); }
+    };
+    img.src=url;
+  };
+  inp.click();
+}
+
+function toggleIgnore(vehicleId,serviceId){
+  var v=state.vehicles.find(function(x){ return x.id===vehicleId; });
+  if(!v) return;
+  if(!v.ignoredServices) v.ignoredServices=[];
+  var idx=v.ignoredServices.indexOf(serviceId);
+  if(idx>=0){ v.ignoredServices.splice(idx,1); showToast('Service restored.'); }
+  else { v.ignoredServices.push(serviceId); showToast('Service ignored.'); }
+  render(); dbSaveV(v);
+}
+
+// ── Log service ───────────────────────────────────────
+function openLogService(vehicleId,serviceId){
+  if(!state.vehicles.length){ alert('Add a vehicle first.'); return; }
+  var today=new Date().toISOString().split('T')[0];
+  var allSvc=[];
+  Object.values(S).forEach(function(sch){ sch.forEach(function(s){ if(!allSvc.find(function(a){ return a.id===s.id; })) allSvc.push(s); }); });
+  showModal('<div class="modal-title">Log a service</div>'+
+    '<div class="form-group"><label class="form-label">Vehicle</label><select id="lv">'+state.vehicles.map(function(v){ return '<option value="'+v.id+'" '+(v.id===vehicleId?'selected':'')+'>'+esc(v.year+' '+v.make+' '+v.model)+'</option>'; }).join('')+'</select></div>'+
+    '<div class="form-group"><label class="form-label">Service type</label><select id="ls">'+allSvc.map(function(s){ return '<option value="'+s.id+'" '+(s.id===serviceId?'selected':'')+'>'+esc(s.name)+'</option>'; }).join('')+'<option value="other">Other / custom</option></select></div>'+
+    '<div class="form-group" id="lc-wrap" style="display:none"><label class="form-label">Custom name</label><input id="lc" placeholder="e.g. Alignment"></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Date</label><input id="ld" type="date" value="'+today+'"></div>'+
+    '<div class="form-group"><label class="form-label">Mileage at service</label><input id="lm" type="number"></div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Cost ($)</label><input id="lco" type="number" step="0.01" placeholder="0.00"></div>'+
+    '<div class="form-group"><label class="form-label">Shop</label><input id="lsh" placeholder="Dealer, Jiffy Lube..."></div></div>'+
+    '<div class="form-group"><label class="form-label">What was done</label><textarea id="lw" placeholder="e.g. Replaced 5W-30 synthetic oil, new OEM filter, reset oil life monitor..."></textarea></div>'+
+    '<div class="form-group"><label class="form-label">Notes</label><textarea id="ln" style="min-height:60px" placeholder="e.g. Tech noticed brake pads at 3mm."></textarea></div>'+
+    '<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="logService()">Save record</button></div>');
+  document.getElementById('ls').addEventListener('change',function(){ document.getElementById('lc-wrap').style.display=this.value==='other'?'block':'none'; });
+  var vsel=document.getElementById('lv'),mfld=document.getElementById('lm');
+  function pf(){ var v=state.vehicles.find(function(x){ return x.id===vsel.value; }); if(v&&!mfld.value) mfld.value=v.mileage; }
+  pf(); vsel.addEventListener('change',pf);
+}
+
+function logService(){
+  var vid=document.getElementById('lv').value;
+  var sid=document.getElementById('ls').value;
+  var isC=sid==='other';
+  var sn=isC?document.getElementById('lc').value.trim():document.getElementById('ls').options[document.getElementById('ls').selectedIndex].text;
+  var date=document.getElementById('ld').value;
+  var mi=parseInt(document.getElementById('lm').value);
+  if(!sn||!date||!mi){ alert('Please fill in service, date, and mileage.'); return; }
+  var r={id:Date.now().toString(),vehicleId:vid,serviceId:isC?'custom_'+Date.now():sid,serviceName:sn,date:date,mileage:mi,cost:document.getElementById('lco').value||null,shop:document.getElementById('lsh').value.trim()||null,workDone:document.getElementById('lw').value.trim()||null,notes:document.getElementById('ln').value.trim()||null};
+  state.history.push(r);
+  var v=state.vehicles.find(function(x){ return x.id===vid; });
+  if(v&&mi>v.mileage){ v.mileage=mi; dbSaveV(v); }
+  closeModal(); render();
+  dbSaveH(r); showToast('✅ Service record saved!');
+}
+
+function editHistory(id){
+  var r=state.history.find(function(x){ return x.id===id; });
+  if(!r) return;
+  var allSvc=[];
+  Object.values(S).forEach(function(sch){ sch.forEach(function(s){ if(!allSvc.find(function(a){ return a.id===s.id; })) allSvc.push(s); }); });
+  showModal('<div class="modal-title">Edit service record</div>'+
+    '<div class="form-group"><label class="form-label">Vehicle</label><select id="lv">'+state.vehicles.map(function(v){ return '<option value="'+v.id+'" '+(v.id===r.vehicleId?'selected':'')+'>'+esc(v.year+' '+v.make+' '+v.model)+'</option>'; }).join('')+'</select></div>'+
+    '<div class="form-group"><label class="form-label">Service type</label><select id="ls">'+allSvc.map(function(s){ return '<option value="'+s.id+'" '+(s.id===r.serviceId?'selected':'')+'>'+esc(s.name)+'</option>'; }).join('')+'<option value="other" '+(r.serviceId&&r.serviceId.indexOf('custom')===0?'selected':'')+'>Other / custom</option></select></div>'+
+    '<div class="form-group" id="lc-wrap" style="display:'+(r.serviceId&&r.serviceId.indexOf('custom')===0?'block':'none')+'"><label class="form-label">Custom name</label><input id="lc" value="'+esc(r.serviceName||'')+'"></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Date</label><input id="ld" type="date" value="'+r.date+'"></div>'+
+    '<div class="form-group"><label class="form-label">Mileage</label><input id="lm" type="number" value="'+r.mileage+'"></div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Cost ($)</label><input id="lco" type="number" step="0.01" value="'+(r.cost||'')+'"></div>'+
+    '<div class="form-group"><label class="form-label">Shop</label><input id="lsh" value="'+esc(r.shop||'')+'"></div></div>'+
+    '<div class="form-group"><label class="form-label">What was done</label><textarea id="lw">'+esc(r.workDone||'')+'</textarea></div>'+
+    '<div class="form-group"><label class="form-label">Notes</label><textarea id="ln" style="min-height:60px">'+esc(r.notes||'')+'</textarea></div>'+
+    '<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveEditH(\''+id+'\')">Save changes</button></div>');
+  document.getElementById('ls').addEventListener('change',function(){ document.getElementById('lc-wrap').style.display=this.value==='other'?'block':'none'; });
+}
+
+function saveEditH(id){
+  var r=state.history.find(function(x){ return x.id===id; });
+  if(!r) return;
+  var sid=document.getElementById('ls').value, isC=sid==='other';
+  var sn=isC?document.getElementById('lc').value.trim():document.getElementById('ls').options[document.getElementById('ls').selectedIndex].text;
+  var date=document.getElementById('ld').value, mi=parseInt(document.getElementById('lm').value);
+  if(!sn||!date||!mi){ alert('Please fill in service, date, and mileage.'); return; }
+  r.vehicleId=document.getElementById('lv').value; r.serviceId=isC?'custom_'+r.id:sid;
+  r.serviceName=sn; r.date=date; r.mileage=mi;
+  r.cost=document.getElementById('lco').value||null; r.shop=document.getElementById('lsh').value.trim()||null;
+  r.workDone=document.getElementById('lw').value.trim()||null; r.notes=document.getElementById('ln').value.trim()||null;
+  closeModal(); renderHistory(); dbSaveH(r); showToast('✅ Record updated!');
+}
+
+function deleteHistory(id){
+  if(!confirm('Remove this record?')) return;
+  state.history=state.history.filter(function(h){ return h.id!==id; });
+  renderHistory(); dbDelH(id); showToast('Removed.');
+}
+
+// ── Modal ─────────────────────────────────────────────
+function showModal(html){
+  document.getElementById('modal-container').innerHTML='<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">'+html+'</div></div>';
+}
+function closeModal(){ document.getElementById('modal-container').innerHTML=''; }
+
+// ── Boot ──────────────────────────────────────────────
+var savedURL=localStorage.getItem('giq_fb_url');
+if(savedURL){
+  DB_URL=savedURL;
+  document.getElementById('setup-wrap').style.display='none';
+  document.getElementById('main-app').style.display='block';
+  loadFromDB();
+} else {
+  document.getElementById('setup-wrap').style.display='flex';
+}
+</script>
+</body>
+</html>
