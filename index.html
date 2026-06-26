@@ -138,17 +138,6 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
     </div>
   </div>
   <div class="app">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:8px">
-      <div class="section-title" style="margin:0">Your vehicles</div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;color:var(--text2)">Sort by</span>
-        <select id="vehicle-sort" onchange="renderDashboard()" style="width:auto;font-size:12px;padding:5px 10px;">
-          <option value="name">Name</option>
-          <option value="mileage">Mileage</option>
-          <option value="overdue">Most overdue</option>
-        </select>
-      </div>
-    </div>
     <div class="tabs">
       <button class="tab active" onclick="setTab('dashboard',this)">Dashboard</button>
       <button class="tab" onclick="setTab('schedule',this)">Service schedule</button>
@@ -156,6 +145,17 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
     </div>
     <div id="view-dashboard">
       <div class="summary-grid" id="summary-grid"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:8px">
+        <div class="section-title" style="margin:0">Your vehicles</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:12px;color:var(--text2)">Sort by</span>
+          <select id="vehicle-sort" onchange="renderDashboard()" style="width:auto;font-size:12px;padding:5px 10px;">
+            <option value="name">Name</option>
+            <option value="mileage">Mileage</option>
+            <option value="overdue">Most overdue</option>
+          </select>
+        </div>
+      </div>
       <div class="vehicle-grid" id="vehicle-grid"></div>
       <div id="alerts-section"></div>
     </div>
@@ -913,4 +913,4 @@ function renderDashboard(){
     });
   });
 
-  var ignored_ov=all.filter(function(x){ return !(x.vehicle.ignoredServices||[]).i
+  var ignored_ov=all.filter(function(x){ return !(x.vehicle.
