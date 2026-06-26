@@ -205,23 +205,41 @@ function saveURL(u){ localStorage.setItem('giq_fb_url', u); }
 
 // ── Connect ───────────────────────────────────────────
 function connectDB(){
-  var inp = document.getElementById('fb-url');
-  var url = inp.value.trim().replace(/\/+$/, '');
-  var err = document.getElementById('setup-err');
-  err.style.display = 'none';
-  if(!url){
-    err.textContent = 'Please paste your Firebase URL.';
+  try {
+    var inp = document.getElementById('fb-url');
+    var url = (inp ? inp.value : '').trim().replace(/\/+$/, '');
+    var err = document.getElementById('setup-err');
+    err.style.display = 'none';
+
+    if(!url){
+      err.textContent = 'Please paste your Firebase URL.';
+      err.style.display = 'block';
+      return;
+    }
+    if(url.indexOf('firebaseio') === -1){
+      err.textContent = 'URL should contain firebaseio.com';
+      err.style.display = 'block';
+      return;
+    }
+
+    // Save
+    localStorage.setItem('giq_fb_url', url);
+    DB_URL = url;
+
+    // Hide setup
+    document.getElementById('setup-wrap').style.display = 'none';
+
+    // Show app
+    document.getElementById('main-app').style.display = 'block';
+
+    // Load data
+    loadFromDB();
+
+  } catch(ex) {
+    var err = document.getElementById('setup-err');
+    err.textContent = 'Error: ' + ex.message + ' (line: ' + (ex.lineNumber||'?') + ')';
     err.style.display = 'block';
-    return;
   }
-  if(url.indexOf('firebaseio') === -1){
-    err.textContent = 'URL should contain firebaseio.com — copy it from Firebase Realtime Database.';
-    err.style.display = 'block';
-    return;
-  }
-  saveURL(url);
-  DB_URL = url;
-  showApp();
 }
 
 function disconnectDB(){
@@ -232,9 +250,13 @@ function disconnectDB(){
 }
 
 function showApp(){
-  document.getElementById('setup-wrap').style.display = 'none';
-  document.getElementById('main-app').style.display = 'block';
-  loadFromDB();
+  try {
+    document.getElementById('setup-wrap').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+    loadFromDB();
+  } catch(ex) {
+    document.body.innerHTML = '<div style="padding:2rem;font-family:monospace;color:#E24B4A"><h2>showApp Error</h2><p>' + ex.message + '</p><pre>' + (ex.stack||'') + '</pre></div>';
+  }
 }
 
 // ── Firebase REST ─────────────────────────────────────
@@ -892,20 +914,4 @@ function getStatus(v, s){
     pct:       Math.min(milePct, 1),
     dueMile:   dueMile,
     milesOver: Math.max(0, Math.round(milesOver)),
-    milesUntil:Math.round(milesUntil),
-    estimated: true   // flag so we can show "estimated" note
-  };
-}
-
-function leaseInfo(v){
-  if(!v.leaseEndMonth||!v.leaseEndYear) return null;
-  var months=Math.round((new Date(v.leaseEndYear,v.leaseEndMonth-1,1)-new Date())/(1000*60*60*24*30));
-  return { months:months };
-}
-function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-// ── Tabs ──────────────────────────────────────────────
-function setTab(tab,el){
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-  el.classList.add('active');
-  document.querySelectorAll('[
+   
