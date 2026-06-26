@@ -110,7 +110,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
 <body>
 
 <!-- SETUP -->
-<div id="setup-wrap" class="setup-wrap" style="display:none">
+<div id="setup-wrap" class="setup-wrap">
   <div class="setup-card">
     <div class="setup-logo">🔧</div>
     <div class="setup-title">GarageIQ — Connect Database</div>
@@ -184,6 +184,19 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Global error catcher ─────────────────────────────
+window.onerror = function(msg, src, line, col, err){
+  document.body.style.background = '#1c1c1a';
+  document.body.style.color = '#f0efe8';
+  document.body.style.fontFamily = 'monospace';
+  document.body.style.padding = '2rem';
+  document.body.innerHTML = '<h2 style="color:#E24B4A">GarageIQ Error</h2>'
+    + '<p style="margin:1rem 0;font-size:14px">Line ' + line + ': ' + msg + '</p>'
+    + '<p style="font-size:12px;color:#a0a09a">Source: ' + src + '</p>'
+    + '<p style="margin-top:1rem;font-size:13px">Take a screenshot and share it.</p>';
+  return true;
+};
+
 // ── DB URL ────────────────────────────────────────────
 var DB_URL = '';
 
@@ -895,22 +908,4 @@ function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').r
 function setTab(tab,el){
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   el.classList.add('active');
-  document.querySelectorAll('[id^="view-"]').forEach(function(v){v.style.display='none';});
-  document.getElementById('view-'+tab).style.display='block';
-  state.activeTab=tab;
-  if(tab==='dashboard') renderDashboard();
-  else if(tab==='schedule') renderSchedule();
-  else renderHistory();
-}
-
-// ── Dashboard ─────────────────────────────────────────
-function renderDashboard(){
-  var all=[];
-  state.vehicles.forEach(function(v){
-    getSched(v.make, v.model).forEach(function(s){
-      var st=getStatus(v,s);
-      all.push({vehicle:v,service:s,st:st});
-    });
-  });
-
-  var ignored_ov=all.filter(function(x){ return !(x.vehicle.
+  document.querySelectorAll('[
