@@ -831,25 +831,57 @@ function svcRow(v,s,st){
 function renderSchedule(){
   var sel=document.getElementById('sched-filter');
   var prev=sel.value;
-  sel.innerHTML='<option value="all">All vehicles</option>'+state.vehicles.map(function(v){ return '<option value="'+v.id+'">'+esc(v.year+' '+v.make+' '+v.model)+'</option>'; }).join('');
+  sel.innerHTML='<option value="all">All vehicles — sorted by urgency</option>'+state.vehicles.map(function(v){ return '<option value="'+v.id+'">'+esc(v.year+' '+v.make+' '+v.model)+'</option>'; }).join('');
   if(window._sched){ sel.value=window._sched; window._sched=null; } else if(prev){ sel.value=prev; }
   var fv=sel.value||'all';
-  var vs=fv==='all'?state.vehicles:state.vehicles.filter(function(v){ return v.id===fv; });
   var list=document.getElementById('schedule-list');
-  if(!vs.length){ list.innerHTML='<div class="empty-state"><div class="empty-title">No vehicles yet</div></div>'; return; }
-  var html='';
-  vs.forEach(function(v){
+
+  if(fv==='all'){
+    // Collect ALL services from ALL vehicles into one flat list
+    var all=[];
+    state.vehicles.forEach(function(v){
+      var igs=v.ignoredServices||[];
+      getSched(v.make,v.model).forEach(function(s){
+        var st=getStatus(v,s);
+        var ignored=igs.indexOf(s.id)>=0;
+        all.push({v:v,s:s,st:st,ignored:ignored});
+      });
+    });
+
+    // Sort: overdue first, then due-soon, then ok, ignored last
+    // Within each group sort by pct descending (most urgent first)
+    function urgencyScore(x){
+      if(x.ignored) return 4;
+      if(x.st.status==='overdue') return 0;
+      if(x.st.status==='due-soon') return 1;
+      return 2;
+    }
+    all.sort(function(a,b){
+      var ua=urgencyScore(a), ub=urgencyScore(b);
+      if(ua!==ub) return ua-ub;
+      return b.st.pct-a.st.pct;
+    });
+
+    if(!all.length){ list.innerHTML='<div class="empty-state"><div class="empty-title">No vehicles yet</div></div>'; return; }
+    list.innerHTML='<div class="service-list">'+all.map(function(x){ return svcRow(x.v,x.s,x.st); }).join('')+'</div>';
+
+  } else {
+    // Single vehicle — show its services sorted by urgency
+    var vs=state.vehicles.filter(function(v){ return v.id===fv; });
+    if(!vs.length){ list.innerHTML='<div class="empty-state"><div class="empty-title">No vehicles yet</div></div>'; return; }
+    var v=vs[0];
     var igs=v.ignoredServices||[];
     var svcs=getSched(v.make,v.model).map(function(s){ return {s:s,st:getStatus(v,s)}; });
     svcs.sort(function(a,b){
       var ai=igs.indexOf(a.s.id)>=0?1:0, bi=igs.indexOf(b.s.id)>=0?1:0;
       if(ai!==bi) return ai-bi;
+      var ua=a.st.status==='overdue'?0:a.st.status==='due-soon'?1:2;
+      var ub=b.st.status==='overdue'?0:b.st.status==='due-soon'?1:2;
+      if(ua!==ub) return ua-ub;
       return b.st.pct-a.st.pct;
     });
-    if(fv==='all') html+='<div style="font-size:13px;font-weight:600;margin:1.25rem 0 .5rem;color:var(--text2)">'+esc(v.year+' '+v.make+' '+v.model)+' · '+Number(v.mileage).toLocaleString()+' mi</div>';
-    html+='<div class="service-list" style="margin-bottom:1rem">'+svcs.map(function(x){ return svcRow(v,x.s,x.st); }).join('')+'</div>';
-  });
-  list.innerHTML=html;
+    list.innerHTML='<div class="service-list">'+svcs.map(function(x){ return svcRow(v,x.s,x.st); }).join('')+'</div>';
+  }
 }
 
 // ── History tab ───────────────────────────────────────
