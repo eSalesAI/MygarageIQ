@@ -752,7 +752,15 @@ function renderDashboard(){
   });
   vg.innerHTML=vs.map(vcHTML).join('');
 
-  var urgent=all.filter(function(x){ return !ign(x)&&(x.st.status==='overdue'||x.st.status==='due-soon'); }).slice(0,8);
+  var urgent=all.filter(function(x){ return !ign(x)&&(x.st.status==='overdue'||x.st.status==='due-soon'); });
+  // Sort: overdue first, then due-soon, within each group by highest pct (most urgent)
+  urgent.sort(function(a,b){
+    var ua=a.st.status==='overdue'?0:1;
+    var ub=b.st.status==='overdue'?0:1;
+    if(ua!==ub) return ua-ub;
+    return b.st.pct-a.st.pct;
+  });
+  urgent=urgent.slice(0,10);
   document.getElementById('alerts-section').innerHTML=urgent.length
     ?'<hr class="sep"><div class="section-title">Needs attention now</div><div class="service-list">'+urgent.map(function(x){ return svcRow(x.v,x.s,x.st); }).join('')+'</div>'
     :'';
