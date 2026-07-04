@@ -193,11 +193,11 @@ function dbDel(path){
 }
 function dbSaveV(v){ setSaving(); dbSet('garageiq/vehicles/'+v.id,v).then(setSynced).catch(setSynced); }
 function dbDelV(id){ setSaving(); dbDel('garageiq/vehicles/'+id).then(setSynced).catch(setSynced); }
-function dbSaveH(r){ setSaving(); dbSet('garageiq/history/'+r.id,r).then(setSynced).catch(setSynced); }
+function dbSaveH(r){ setSaving(); return dbSet('garageiq/history/'+r.id,r).then(setSynced).catch(setSynced); }
 function dbDelH(id){ setSaving(); dbDel('garageiq/history/'+id).then(setSynced).catch(setSynced); }
 
-function setSaving(){ var b=document.getElementById('sync-badge'); if(b){b.className='saving';b.textContent='● Saving...';} }
-function setSynced(){ var b=document.getElementById('sync-badge'); if(b){b.className='synced';b.textContent='● Synced';} }
+function setSaving(){ state.saving=true; var b=document.getElementById('sync-badge'); if(b){b.className='saving';b.textContent='● Saving...';} }
+function setSynced(){ state.saving=false; var b=document.getElementById('sync-badge'); if(b){b.className='synced';b.textContent='● Synced';} }
 
 function loadFromDB(){
   dbGet('garageiq').then(function(data){
@@ -212,6 +212,8 @@ function loadFromDB(){
     render();
   });
   setInterval(function(){
+    // Skip poll if we just saved something (wait for Firebase to catch up)
+    if(state.saving) return;
     dbGet('garageiq').then(function(data){
       if(!data) return;
       state.vehicles = data.vehicles ? Object.values(data.vehicles) : [];
@@ -1060,8 +1062,15 @@ function logService(){
   state.history.push(r);
   var v=state.vehicles.find(function(x){ return x.id===vid; });
   if(v&&mi>v.mileage){ v.mileage=mi; dbSaveV(v); }
-  closeModal(); render();
-  dbSaveH(r); showToast('✅ Service record saved!');
+  closeModal();
+  // Save to Firebase first, then render so we show fresh data
+  dbSaveH(r).then(function(){
+    render();
+    showToast('✅ Service record saved!');
+  }).catch(function(){
+    render();
+    showToast('✅ Service record saved!');
+  });
 }
 
 function editHistory(id){
