@@ -183,6 +183,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
           <label class="btn btn-sm btn-outline" style="cursor:pointer;display:flex;align-items:center;gap:4px">
             📥 Import Turo CSV(s)<input type="file" id="turo-csv" accept=".csv" multiple style="display:none" onchange="importTuroCSV(event)">
           </label>
+          <button class="btn btn-sm btn-danger" onclick="clearImportedTrips()">🗑 Clear imported trips</button>
           <button class="add-btn" onclick="openLogRevenue(null)">+ Log trip</button>
         </div>
       </div>
@@ -1299,6 +1300,18 @@ function deleteRevenue(id){
   if(!confirm('Remove this trip record?')) return;
   state.revenue=state.revenue.filter(function(r){ return r.id!==id; });
   renderRevenue(); dbDelR(id); showToast('Removed.');
+}
+
+function clearImportedTrips(){
+  var importedCount=state.revenue.filter(function(r){ return r.notes && r.notes.indexOf('Imported from Turo CSV')>=0; }).length;
+  if(!importedCount){ alert('No imported trips found. Trips you logged manually are never affected by this.'); return; }
+  if(!confirm('Remove all '+importedCount+' trip'+(importedCount!==1?'s':'')+' that were imported from a Turo CSV?\n\nManually logged trips will NOT be affected. This cannot be undone — re-import your CSV(s) afterward if needed.')) return;
+
+  var toRemove=state.revenue.filter(function(r){ return r.notes && r.notes.indexOf('Imported from Turo CSV')>=0; });
+  state.revenue=state.revenue.filter(function(r){ return !(r.notes && r.notes.indexOf('Imported from Turo CSV')>=0); });
+  toRemove.forEach(function(r){ dbDelR(r.id); });
+  renderRevenue();
+  showToast('🗑 Removed '+importedCount+' imported trip'+(importedCount!==1?'s':'')+'.');
 }
 
 function isDuplicateTrip(newTrip){
