@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- GarageIQ v7 -->
+<!-- FleetFolio v1 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>GarageIQ</title>
+<title>FleetFolio</title>
 <style>
 :root{--bg:#fff;--bg2:#f5f5f3;--bg3:#efefec;--text:#1a1a18;--text2:#6b6b67;--border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);--accent:#185FA5;--accent-dark:#0C447C;--red:#A32D2D;--red-bg:#FCEBEB;--red-border:#F7C1C1;--amber:#854F0B;--amber-bg:#FAEEDA;--green:#3B6D11;--green-bg:#EAF3DE;--blue:#185FA5;--blue-bg:#E6F1FB;--purple:#3C3489;--purple-bg:#EEEDFE;--r:10px;--rs:7px;}
 @media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--text:#f0efe8;--text2:#a0a09a;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);--red-bg:#3a1515;--amber-bg:#3a2a08;--green-bg:#1a2e0a;--blue-bg:#0c2640;--purple-bg:#1e1a40;}}
@@ -108,7 +108,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
 <div id="setup-wrap" class="setup-wrap">
   <div class="setup-card">
     <div class="setup-logo">🔧</div>
-    <div class="setup-title">GarageIQ</div>
+    <div class="setup-title">FleetFolio</div>
     <div class="setup-sub">Connect your Firebase Realtime Database to sync across all devices.</div>
     <div class="step"><div class="step-n">1</div><div class="step-t">Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → sign in → open your project.</div></div>
     <div class="step"><div class="step-n">2</div><div class="step-t">Click <strong>Build → Realtime Database</strong>. Copy the URL at the top.</div></div>
@@ -125,7 +125,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
 
 <div id="main-app" style="display:none">
   <div class="topbar">
-    <div class="logo">🔧 GarageIQ &nbsp;<span id="sync-badge" class="synced">● Synced</span></div>
+    <div class="logo">🚗 FleetFolio &nbsp;<span id="sync-badge" class="synced">● Synced</span></div>
     <div class="topbar-right">
       <button class="btn btn-sm btn-outline" onclick="disconnectDB()">⚙ Database</button>
       <button class="add-btn" onclick="openAddVehicle()">+ Add vehicle</button>
@@ -136,6 +136,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
       <button class="tab active" id="tab0" onclick="setTab(0)">Dashboard</button>
       <button class="tab" id="tab1" onclick="setTab(1)">Service schedule</button>
       <button class="tab" id="tab2" onclick="setTab(2)">Service history</button>
+      <button class="tab" id="tab3" onclick="setTab(3)">Revenue</button>
     </div>
     <div id="view-dashboard">
       <div class="summary-grid" id="summary-grid"></div>
@@ -174,12 +175,26 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
   </div>
 </div>
 
+    <div id="view-revenue" style="display:none">
+      <div class="toolbar">
+        <div class="section-title" style="margin:0">Revenue & profit</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="rev-filter" onchange="renderRevenue()" style="width:auto;font-size:13px;padding:7px 11px;"></select>
+          <label class="btn btn-sm btn-outline" style="cursor:pointer;display:flex;align-items:center;gap:4px">
+            📥 Import Turo CSV<input type="file" id="turo-csv" accept=".csv" style="display:none" onchange="importTuroCSV(event)">
+          </label>
+          <button class="add-btn" onclick="openLogRevenue(null)">+ Log trip</button>
+        </div>
+      </div>
+      <div class="summary-grid" id="rev-summary"></div>
+      <div id="revenue-list"></div>
+    </div>
 <div id="modal-container"></div>
 <div class="toast" id="toast"></div>
 
 <script>
 var DB_URL = '';
-var state = { vehicles:[], history:[], tab:0 };
+var state = { vehicles:[], history:[], revenue:[], tab:0, saving:false };
 
 // ── Firebase ──────────────────────────────────────────
 function dbGet(path){
@@ -195,6 +210,8 @@ function dbSaveV(v){ setSaving(); dbSet('garageiq/vehicles/'+v.id,v).then(setSyn
 function dbDelV(id){ setSaving(); dbDel('garageiq/vehicles/'+id).then(setSynced).catch(setSynced); }
 function dbSaveH(r){ setSaving(); return dbSet('garageiq/history/'+r.id,r).then(setSynced).catch(setSynced); }
 function dbDelH(id){ setSaving(); dbDel('garageiq/history/'+id).then(setSynced).catch(setSynced); }
+function dbSaveR(r){ setSaving(); return dbSet('garageiq/revenue/'+r.id,r).then(setSynced).catch(setSynced); }
+function dbDelR(id){ setSaving(); dbDel('garageiq/revenue/'+id).then(setSynced).catch(setSynced); }
 
 function setSaving(){ state.saving=true; var b=document.getElementById('sync-badge'); if(b){b.className='saving';b.textContent='● Saving...';} }
 function setSynced(){ state.saving=false; var b=document.getElementById('sync-badge'); if(b){b.className='synced';b.textContent='● Synced';} }
@@ -204,6 +221,7 @@ function loadFromDB(){
     if(data){
       state.vehicles = data.vehicles ? Object.values(data.vehicles) : [];
       state.history  = data.history  ? Object.values(data.history)  : [];
+      state.revenue  = data.revenue  ? Object.values(data.revenue)  : [];
     }
     render();
     setSynced();
@@ -212,12 +230,12 @@ function loadFromDB(){
     render();
   });
   setInterval(function(){
-    // Skip poll if we just saved something (wait for Firebase to catch up)
     if(state.saving) return;
     dbGet('garageiq').then(function(data){
       if(!data) return;
       state.vehicles = data.vehicles ? Object.values(data.vehicles) : [];
       state.history  = data.history  ? Object.values(data.history)  : [];
+      state.revenue  = data.revenue  ? Object.values(data.revenue)  : [];
       render();
     }).catch(function(){});
   }, 8000);
@@ -252,11 +270,12 @@ function showToast(msg){
 // ── Tab switching ─────────────────────────────────────
 function setTab(n){
   state.tab=n;
-  for(var i=0;i<3;i++) document.getElementById('tab'+i).classList.remove('active');
+  for(var i=0;i<4;i++) document.getElementById('tab'+i).classList.remove('active');
   document.getElementById('tab'+n).classList.add('active');
   document.getElementById('view-dashboard').style.display = n===0?'block':'none';
   document.getElementById('view-schedule').style.display  = n===1?'block':'none';
   document.getElementById('view-history').style.display   = n===2?'block':'none';
+  document.getElementById('view-revenue').style.display   = n===3?'block':'none';
   render();
 }
 
@@ -267,7 +286,8 @@ function goToHistory(id){  window._hist=id;  setTab(2); }
 function render(){
   if(state.tab===0) renderDashboard();
   else if(state.tab===1) renderSchedule();
-  else renderHistory();
+  else if(state.tab===2) renderHistory();
+  else renderRevenue();
 }
 
 // ── Car photos ────────────────────────────────────────
@@ -727,11 +747,14 @@ function renderDashboard(){
   var ds=all.filter(function(x){ return !ign(x)&&x.st.status==='due-soon'; }).length;
   var spent=state.history.reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0);
 
+  var totalRev=state.revenue.reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
+  var totalExp=state.history.reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0);
+  var netProfit=totalRev-totalExp;
   document.getElementById('summary-grid').innerHTML=
     '<div class="metric"><div class="metric-label">Vehicles</div><div class="metric-value">'+state.vehicles.length+'</div></div>'+
     '<div class="metric"><div class="metric-label">Overdue</div><div class="metric-value" style="color:var(--red)">'+ov+'</div></div>'+
-    '<div class="metric"><div class="metric-label">Due soon</div><div class="metric-value" style="color:var(--amber)">'+ds+'</div></div>'+
-    '<div class="metric"><div class="metric-label">Total spent</div><div class="metric-value">$'+Math.round(spent).toLocaleString()+'</div></div>';
+    '<div class="metric"><div class="metric-label">Total revenue</div><div class="metric-value" style="color:var(--green)">$'+Math.round(totalRev).toLocaleString()+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Net profit</div><div class="metric-value" style="color:'+(netProfit>=0?'var(--green)':'var(--red)')+'">$'+Math.round(netProfit).toLocaleString()+'</div></div>';
 
   var vg=document.getElementById('vehicle-grid');
   if(!state.vehicles.length){
@@ -792,7 +815,16 @@ function vcHTML(v){
     '<div><div class="vc-name">'+esc(v.year+' '+v.make+' '+v.model)+'</div>'+(v.trim?'<div class="vc-trim">'+esc(v.trim)+'</div>':'')+'</div>'+
     '<div style="display:flex;gap:4px"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editVehicle(\''+v.id+'\')">✏️</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteVehicle(\''+v.id+'\')">Remove</button></div>'+
     '</div>'+
-    '<div class="vc-mileage">'+Number(v.mileage).toLocaleString()+' miles'+(v.nickname?' · '+esc(v.nickname):'')+(spent>0?' · <strong>$'+spent.toLocaleString()+' spent</strong>':'')+'</div>'+
+    '<div class="vc-mileage">'+Number(v.mileage).toLocaleString()+' miles'+(v.nickname?' · '+esc(v.nickname):'')+(function(){
+    var vRev=state.revenue.filter(function(r){ return r.vehicleId===v.id; }).reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
+    var vExp=spent;
+    var vNet=vRev-vExp;
+    var parts=[];
+    if(vRev>0) parts.push('<span style="color:var(--green)">$'+Math.round(vRev).toLocaleString()+' earned</span>');
+    if(vExp>0) parts.push('$'+Math.round(vExp).toLocaleString()+' spent');
+    if(vRev>0&&vExp>0) parts.push('<strong style="color:'+(vNet>=0?'var(--green)':'var(--red)')+'">$'+Math.round(Math.abs(vNet)).toLocaleString()+' '+(vNet>=0?'profit':'loss')+'</strong>');
+    return parts.length?' · '+parts.join(' · '):'';
+  })()+'</div>'+
     (ll&&ld?'<div class="vc-lease"><span class="vc-lease-label">'+ll+':</span><span class="vc-lease-date">'+ld+'</span>'+lb+'</div>':'')+
     '<div class="vc-alerts">'+badges+'</div>'+
     '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'+
@@ -1118,6 +1150,228 @@ function deleteHistory(id){
   if(!confirm('Remove this record?')) return;
   state.history=state.history.filter(function(h){ return h.id!==id; });
   renderHistory(); dbDelH(id); showToast('Removed.');
+}
+
+// ── Revenue ───────────────────────────────────────────
+var PLATFORMS=['Turo','Getaround','HyreCar','Outdoorsy','RVshare','Direct rental','Other'];
+
+function renderRevenue(){
+  var sel=document.getElementById('rev-filter');
+  var prev=sel.value;
+  sel.innerHTML='<option value="all">All vehicles</option>'+state.vehicles.map(function(v){ return '<option value="'+v.id+'">'+esc(v.year+' '+v.make+' '+v.model)+'</option>'; }).join('');
+  if(prev) sel.value=prev;
+  var fv=sel.value||'all';
+  var recs=state.revenue.filter(function(r){ return fv==='all'||r.vehicleId===fv; }).sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+
+  // Summary metrics
+  var totalRev=recs.reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
+  var totalMi=recs.reduce(function(a,r){ return a+(parseFloat(r.miles)||0); },0);
+  var totalTrips=recs.length;
+  var vIds=fv==='all'?state.vehicles.map(function(v){ return v.id; }):[fv];
+  var totalExp=state.history.filter(function(h){ return vIds.indexOf(h.vehicleId)>=0; }).reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0);
+  var netProfit=totalRev-totalExp;
+
+  document.getElementById('rev-summary').innerHTML=
+    '<div class="metric"><div class="metric-label">Total trips</div><div class="metric-value">'+totalTrips+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Total revenue</div><div class="metric-value" style="color:var(--green)">$'+totalRev.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Total expenses</div><div class="metric-value" style="color:var(--red)">$'+totalExp.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Net profit</div><div class="metric-value" style="color:'+(netProfit>=0?'var(--green)':'var(--red)')+'">$'+Math.abs(netProfit).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+(netProfit<0?' (loss)':'')+'</div></div>';
+
+  var list=document.getElementById('revenue-list');
+  if(!recs.length){
+    list.innerHTML='<div class="empty-state"><div class="empty-icon">💰</div><div class="empty-title">No trips logged yet</div><p>Click "+ Log trip" to add rental income, or import your Turo CSV.</p></div>';
+    return;
+  }
+
+  // Group by month
+  var byMonth={};
+  recs.forEach(function(r){
+    var mo=r.date.substring(0,7);
+    if(!byMonth[mo]) byMonth[mo]={trips:[],rev:0};
+    byMonth[mo].trips.push(r);
+    byMonth[mo].rev+=(parseFloat(r.earnings)||0);
+  });
+
+  var html='';
+  Object.keys(byMonth).sort().reverse().forEach(function(mo){
+    var d=new Date(mo+'-01');
+    var label=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+    html+='<div style="font-size:13px;font-weight:600;margin:1.25rem 0 .5rem;display:flex;justify-content:space-between;align-items:center">'+
+      '<span style="color:var(--text2)">'+label+'</span>'+
+      '<span style="color:var(--green);font-weight:700">$'+byMonth[mo].rev.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>'+
+      '</div>';
+    byMonth[mo].trips.forEach(function(r){
+      var v=state.vehicles.find(function(x){ return x.id===r.vehicleId; });
+      var vn=v?esc(v.year+' '+v.make+' '+v.model):'Unknown vehicle';
+      html+='<div class="history-card">'+
+        '<div class="history-header">'+
+        '<div>'+
+        '<div class="history-name">'+esc(r.platform||'Rental')+' — '+vn+'</div>'+
+        '<div class="history-meta">'+r.date+(r.miles?' · '+Number(r.miles).toLocaleString()+' mi driven':'')+(r.tripDays?' · '+r.tripDays+' day'+(r.tripDays>1?'s':''):'')+(r.guest?' · Guest: '+esc(r.guest):'')+'</div>'+
+        '<span class="badge badge-green" style="margin-top:6px;display:inline-flex;font-size:13px;padding:4px 12px">$'+parseFloat(r.earnings).toFixed(2)+'</span>'+
+        (r.platformFee?'<span class="badge badge-gray" style="margin-top:6px;margin-left:4px;display:inline-flex">Fee: $'+parseFloat(r.platformFee).toFixed(2)+'</span>':'')+
+        '</div>'+
+        '<div style="display:flex;gap:6px">'+
+        '<button class="btn btn-sm btn-outline" onclick="editRevenue(\''+r.id+'\')">✏️ Edit</button>'+
+        '<button class="btn btn-sm btn-danger" onclick="deleteRevenue(\''+r.id+'\')">Remove</button>'+
+        '</div></div>'+
+        (r.notes?'<div class="history-detail"><div class="history-detail-label">Notes</div>'+esc(r.notes)+'</div>':'')+
+        '</div>';
+    });
+  });
+  list.innerHTML=html;
+}
+
+function openLogRevenue(vehicleId){
+  if(!state.vehicles.length){ alert('Add a vehicle first.'); return; }
+  var today=new Date().toISOString().split('T')[0];
+  showModal('<div class="modal-title">Log a trip</div>'+
+    '<div class="form-group"><label class="form-label">Vehicle</label><select id="rv-v">'+state.vehicles.map(function(v){ return '<option value="'+v.id+'" '+(v.id===vehicleId?'selected':'')+'>'+esc(v.year+' '+v.make+' '+v.model)+'</option>'; }).join('')+'</select></div>'+
+    '<div class="form-group"><label class="form-label">Platform</label><select id="rv-p">'+PLATFORMS.map(function(p){ return '<option value="'+p+'">'+p+'</option>'; }).join('')+'</select></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Trip date</label><input id="rv-d" type="date" value="'+today+'"></div>'+
+    '<div class="form-group"><label class="form-label">Trip days</label><input id="rv-days" type="number" placeholder="1" min="1"></div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Earnings ($)</label><input id="rv-e" type="number" step="0.01" placeholder="0.00"></div>'+
+    '<div class="form-group"><label class="form-label">Platform fee ($)</label><input id="rv-f" type="number" step="0.01" placeholder="0.00"></div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Miles driven</label><input id="rv-m" type="number" placeholder="0"></div>'+
+    '<div class="form-group"><label class="form-label">Guest name (optional)</label><input id="rv-g" placeholder="Guest name"></div></div>'+
+    '<div class="form-group"><label class="form-label">Notes</label><textarea id="rv-n" style="min-height:60px" placeholder="Any notes about this trip..."></textarea></div>'+
+    '<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="logRevenue()">Save trip</button></div>');
+}
+
+function logRevenue(){
+  var vid=document.getElementById('rv-v').value;
+  var earnings=parseFloat(document.getElementById('rv-e').value);
+  var date=document.getElementById('rv-d').value;
+  if(!date||isNaN(earnings)){ alert('Please fill in date and earnings.'); return; }
+  var r={
+    id:Date.now().toString(),
+    vehicleId:vid,
+    platform:document.getElementById('rv-p').value,
+    date:date,
+    tripDays:parseInt(document.getElementById('rv-days').value)||1,
+    earnings:earnings,
+    platformFee:parseFloat(document.getElementById('rv-f').value)||0,
+    miles:parseFloat(document.getElementById('rv-m').value)||0,
+    guest:document.getElementById('rv-g').value.trim()||null,
+    notes:document.getElementById('rv-n').value.trim()||null
+  };
+  state.revenue.push(r);
+  closeModal();
+  dbSaveR(r).then(function(){ render(); showToast('✅ Trip saved!'); }).catch(function(){ render(); showToast('✅ Trip saved!'); });
+}
+
+function editRevenue(id){
+  var r=state.revenue.find(function(x){ return x.id===id; });
+  if(!r) return;
+  showModal('<div class="modal-title">Edit trip</div>'+
+    '<div class="form-group"><label class="form-label">Vehicle</label><select id="rv-v">'+state.vehicles.map(function(v){ return '<option value="'+v.id+'" '+(v.id===r.vehicleId?'selected':'')+'>'+esc(v.year+' '+v.make+' '+v.model)+'</option>'; }).join('')+'</select></div>'+
+    '<div class="form-group"><label class="form-label">Platform</label><select id="rv-p">'+PLATFORMS.map(function(p){ return '<option value="'+p+'" '+(p===r.platform?'selected':'')+'>'+p+'</option>'; }).join('')+'</select></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Trip date</label><input id="rv-d" type="date" value="'+r.date+'"></div>'+
+    '<div class="form-group"><label class="form-label">Trip days</label><input id="rv-days" type="number" value="'+(r.tripDays||1)+'"></div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Earnings ($)</label><input id="rv-e" type="number" step="0.01" value="'+(r.earnings||'')+'"></div>'+
+    '<div class="form-group"><label class="form-label">Platform fee ($)</label><input id="rv-f" type="number" step="0.01" value="'+(r.platformFee||'')+'"></div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Miles driven</label><input id="rv-m" type="number" value="'+(r.miles||'')+'"></div>'+
+    '<div class="form-group"><label class="form-label">Guest name</label><input id="rv-g" value="'+esc(r.guest||'')+'"></div></div>'+
+    '<div class="form-group"><label class="form-label">Notes</label><textarea id="rv-n" style="min-height:60px">'+esc(r.notes||'')+'</textarea></div>'+
+    '<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveEditRevenue(\''+id+'\')">Save changes</button></div>');
+}
+
+function saveEditRevenue(id){
+  var r=state.revenue.find(function(x){ return x.id===id; });
+  if(!r) return;
+  r.vehicleId=document.getElementById('rv-v').value;
+  r.platform=document.getElementById('rv-p').value;
+  r.date=document.getElementById('rv-d').value;
+  r.tripDays=parseInt(document.getElementById('rv-days').value)||1;
+  r.earnings=parseFloat(document.getElementById('rv-e').value)||0;
+  r.platformFee=parseFloat(document.getElementById('rv-f').value)||0;
+  r.miles=parseFloat(document.getElementById('rv-m').value)||0;
+  r.guest=document.getElementById('rv-g').value.trim()||null;
+  r.notes=document.getElementById('rv-n').value.trim()||null;
+  closeModal(); renderRevenue();
+  dbSaveR(r); showToast('✅ Trip updated!');
+}
+
+function deleteRevenue(id){
+  if(!confirm('Remove this trip record?')) return;
+  state.revenue=state.revenue.filter(function(r){ return r.id!==id; });
+  renderRevenue(); dbDelR(id); showToast('Removed.');
+}
+
+function importTuroCSV(event){
+  var file=event.target.files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var lines=e.target.result.split('\n');
+    var headers=lines[0].split(',').map(function(h){ return h.trim().replace(/"/g,'').toLowerCase(); });
+    var imported=0;
+    var errors=[];
+
+    // Turo CSV columns vary by export type — handle common formats
+    for(var i=1;i<lines.length;i++){
+      var line=lines[i].trim(); if(!line) continue;
+      // Handle quoted CSV properly
+      var cols=[]; var cur=''; var inQ=false;
+      for(var c=0;c<line.length;c++){
+        if(line[c]==='"') inQ=!inQ;
+        else if(line[c]===','&&!inQ){ cols.push(cur.trim()); cur=''; }
+        else cur+=line[c];
+      }
+      cols.push(cur.trim());
+
+      var row={};
+      headers.forEach(function(h,idx){ row[h]=cols[idx]||''; });
+
+      // Try to find vehicle match from car name in CSV
+      var carName=(row['car']||row['vehicle']||row['listing']||'').toLowerCase();
+      var matchedVehicle=null;
+      state.vehicles.forEach(function(v){
+        var vName=(v.make+' '+v.model).toLowerCase();
+        if(carName.indexOf(v.model.toLowerCase())>=0||carName.indexOf(v.make.toLowerCase())>=0){
+          matchedVehicle=v;
+        }
+      });
+
+      // Parse earnings
+      var earnings=parseFloat((row['earnings']||row['host earnings']||row['amount']||row['total']||'0').replace(/[$,]/g,''));
+      var fee=parseFloat((row['turo fee']||row['fee']||row['platform fee']||'0').replace(/[$,]/g,''));
+      var date=row['start date']||row['trip start']||row['date']||'';
+      // Normalize date format
+      if(date){
+        var dp=new Date(date);
+        if(!isNaN(dp)) date=dp.toISOString().split('T')[0];
+      }
+      var miles=parseFloat((row['miles driven']||row['distance']||row['miles']||'0').replace(/,/g,''));
+      var guest=row['renter']||row['guest']||row['renter name']||'';
+      var days=parseInt(row['trip length']||row['days']||'1')||1;
+
+      if(!date||isNaN(earnings)||earnings===0){ errors.push('Row '+(i+1)+': skipped (no date or earnings)'); continue; }
+
+      var r={
+        id:Date.now().toString()+'_'+i,
+        vehicleId:matchedVehicle?matchedVehicle.id:null,
+        platform:'Turo',
+        date:date,
+        tripDays:days,
+        earnings:earnings,
+        platformFee:fee,
+        miles:miles||0,
+        guest:guest||null,
+        notes:'Imported from Turo CSV'
+      };
+      state.revenue.push(r);
+      dbSaveR(r);
+      imported++;
+    }
+
+    renderRevenue();
+    var msg='✅ Imported '+imported+' trip'+(imported!==1?'s':'')+' from Turo CSV.';
+    if(errors.length) msg+=' ('+errors.length+' rows skipped)';
+    showToast(msg);
+    if(!matchedVehicle&&imported>0) showToast('⚠️ Could not auto-match all trips to vehicles — edit each to assign.');
+  };
+  reader.readAsText(file);
+  event.target.value='';
 }
 
 // ── Modal ─────────────────────────────────────────────
