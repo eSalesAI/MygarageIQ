@@ -968,6 +968,7 @@ function openAddVehicle(){
     '<div class="form-group"><label class="form-label">Trim</label><input id="vtr" placeholder="SV, Sport, LE..."></div></div>'+
     '<div class="form-row"><div class="form-group"><label class="form-label">Current mileage</label><input id="vmi" type="number" placeholder="45000"></div>'+
     '<div class="form-group"><label class="form-label">Nickname</label><input id="vni" placeholder="My daily driver"></div></div>'+
+    '<div class="form-group"><label class="form-label">VIN (optional — helps match Turo imports when you have two of the same model)</label><input id="vvin" placeholder="e.g. 5YJYGDEE5MF123456" style="text-transform:uppercase"></div>'+
     '<hr style="border:none;border-top:1px solid var(--border);margin:.75rem 0">'+
     '<div class="form-group"><label class="form-label">Lease / Loan</label><select id="vlt"><option value="">Owned outright</option><option value="lease">Lease</option><option value="payout">Loan payout</option></select></div>'+
     '<div id="vlf" style="display:none"><div class="form-row"><div class="form-group"><label class="form-label">End month</label><select id="vlm">'+mO+'</select></div><div class="form-group"><label class="form-label">End year</label><select id="vly">'+yO+'</select></div></div></div>'+
@@ -980,7 +981,7 @@ function addVehicle(){
   var mi=parseInt(document.getElementById('vmi').value);
   if(!mo||!mi){ alert('Please fill in model and mileage.'); return; }
   var lt=document.getElementById('vlt').value;
-  var v={id:Date.now().toString(),year:document.getElementById('vy').value,make:document.getElementById('vmk').value,model:mo,trim:document.getElementById('vtr').value.trim(),mileage:mi,nickname:document.getElementById('vni').value.trim(),leaseType:lt,leaseEndMonth:lt?parseInt(document.getElementById('vlm').value):null,leaseEndYear:lt?parseInt(document.getElementById('vly').value):null,customPhoto:null,ignoredServices:[]};
+  var v={id:Date.now().toString(),year:document.getElementById('vy').value,make:document.getElementById('vmk').value,model:mo,trim:document.getElementById('vtr').value.trim(),mileage:mi,nickname:document.getElementById('vni').value.trim(),vin:(document.getElementById('vvin').value||'').trim().toUpperCase(),leaseType:lt,leaseEndMonth:lt?parseInt(document.getElementById('vlm').value):null,leaseEndYear:lt?parseInt(document.getElementById('vly').value):null,customPhoto:null,ignoredServices:[]};
   state.vehicles.push(v);
   closeModal(); renderDashboard();
   dbSaveV(v); showToast('✅ Vehicle saved!');
@@ -999,6 +1000,7 @@ function editVehicle(id){
     '<div class="form-group"><label class="form-label">Trim</label><input id="vtr" value="'+esc(v.trim||'')+'"></div></div>'+
     '<div class="form-row"><div class="form-group"><label class="form-label">Current mileage</label><input id="vmi" type="number" value="'+v.mileage+'"></div>'+
     '<div class="form-group"><label class="form-label">Nickname</label><input id="vni" value="'+esc(v.nickname||'')+'"></div></div>'+
+    '<div class="form-group"><label class="form-label">VIN (optional — helps match Turo imports when you have two of the same model)</label><input id="vvin" value="'+esc(v.vin||'')+'" style="text-transform:uppercase"></div>'+
     '<hr style="border:none;border-top:1px solid var(--border);margin:.75rem 0">'+
     '<div class="form-group"><label class="form-label">Lease / Loan</label><select id="vlt"><option value="" '+((!v.leaseType)?'selected':'')+'>Owned outright</option><option value="lease" '+(v.leaseType==='lease'?'selected':'')+'>Lease</option><option value="payout" '+(v.leaseType==='payout'?'selected':'')+'>Loan payout</option></select></div>'+
     '<div id="vlf" style="display:'+(v.leaseType?'block':'none')+'"><div class="form-row"><div class="form-group"><label class="form-label">End month</label><select id="vlm">'+mO+'</select></div><div class="form-group"><label class="form-label">End year</label><select id="vly">'+yO+'</select></div></div></div>'+
@@ -1016,6 +1018,7 @@ function saveEdit(id){
   v.year=document.getElementById('vy').value; v.make=document.getElementById('vmk').value;
   v.model=mo; v.trim=document.getElementById('vtr').value.trim();
   v.mileage=mi; v.nickname=document.getElementById('vni').value.trim();
+  v.vin=(document.getElementById('vvin').value||'').trim().toUpperCase();
   v.leaseType=lt; v.leaseEndMonth=lt?parseInt(document.getElementById('vlm').value):null; v.leaseEndYear=lt?parseInt(document.getElementById('vly').value):null;
   closeModal(); renderDashboard();
   dbSaveV(v); showToast('✅ Updated!');
@@ -1341,20 +1344,40 @@ function importTuroCSV(event){
   Promise.all(files.map(parseCSVFile)).then(function(results){
     var imported=0, skippedDupe=0, skippedBad=0;
 
+    var ambiguous=0;
     results.forEach(function(result){
       result.rows.forEach(function(row){
-        // Turo's official export uses "Vehicle name" e.g. "BMW 1 Series 2013"
-        // Fall back to "Vehicle" e.g. "Mario's BMW (FL #QQWF61)" if needed
+        var vin=(row['vin']||'').trim().toUpperCase();
         var carName=(row['vehicle name']||row['vehicle']||row['car']||row['listing']||'').toLowerCase();
         var matchedVehicle=null;
-        state.vehicles.forEach(function(v){
-          var mk=v.make.toLowerCase(), mo=v.model.toLowerCase();
-          if(carName.indexOf(mk)>=0 && (carName.indexOf(mo)>=0 || carName.indexOf(mo.split(' ')[0])>=0)){
-            matchedVehicle=v;
-          } else if(!matchedVehicle && carName.indexOf(mk)>=0){
-            matchedVehicle=v;
+
+        // Priority 1: exact VIN match (most reliable — distinguishes identical models)
+        if(vin){
+          state.vehicles.forEach(function(v){
+            if(v.vin && v.vin.toUpperCase()===vin) matchedVehicle=v;
+          });
+        }
+
+        // Priority 2: name match, but only if it's unambiguous (exactly one candidate)
+        if(!matchedVehicle){
+          var candidates=state.vehicles.filter(function(v){
+            var mk=v.make.toLowerCase(), mo=v.model.toLowerCase();
+            return carName.indexOf(mk)>=0 && (carName.indexOf(mo)>=0 || carName.indexOf(mo.split(' ')[0])>=0);
+          });
+          if(candidates.length===1){
+            matchedVehicle=candidates[0];
+          } else if(candidates.length>1){
+            // Multiple vehicles share this make/model (e.g. two Tesla Model Ys) —
+            // don't guess; try to disambiguate by year if the CSV name includes it
+            var yearMatch=carName.match(/(20\d{2})/);
+            if(yearMatch){
+              var yr=yearMatch[1];
+              var byYear=candidates.filter(function(v){ return String(v.year)===yr; });
+              if(byYear.length===1) matchedVehicle=byYear[0];
+            }
+            if(!matchedVehicle) ambiguous++;
           }
-        });
+        }
 
         // Turo's exact column is "Total earnings" — check that first
         var earnings=parseFloat((row['total earnings']||row['host earnings']||row['earnings']||row['amount']||row['total']||'0').replace(/[$,\s-]/g,''));
@@ -1391,7 +1414,7 @@ function importTuroCSV(event){
           platformFee:fee,
           miles:miles||0,
           guest:guest||null,
-          notes:'Imported from Turo CSV ('+result.file+')'
+          notes:(matchedVehicle?'':'⚠️ Could not auto-match vehicle — please assign manually. ')+'Imported from Turo CSV ('+result.file+')'
         };
         state.revenue.push(r);
         dbSaveR(r);
@@ -1404,6 +1427,11 @@ function importTuroCSV(event){
     if(skippedDupe) msg+=' Skipped '+skippedDupe+' duplicate'+(skippedDupe!==1?'s':'')+'.';
     if(skippedBad) msg+=' Skipped '+skippedBad+' invalid row'+(skippedBad!==1?'s':'')+'.';
     showToast(msg);
+    if(ambiguous>0){
+      setTimeout(function(){
+        showToast('⚠️ '+ambiguous+' trip'+(ambiguous!==1?'s':'')+' could not be matched to a specific vehicle (duplicate models). Edit them in the list below to assign the right car. Tip: add each car\'s VIN under Edit vehicle to fix this automatically next time.');
+      }, 3000);
+    }
   });
 
   event.target.value='';
