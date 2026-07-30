@@ -1343,26 +1343,35 @@ function importTuroCSV(event){
 
     results.forEach(function(result){
       result.rows.forEach(function(row){
-        var carName=(row['car']||row['vehicle']||row['listing']||'').toLowerCase();
+        // Turo's official export uses "Vehicle name" e.g. "BMW 1 Series 2013"
+        // Fall back to "Vehicle" e.g. "Mario's BMW (FL #QQWF61)" if needed
+        var carName=(row['vehicle name']||row['vehicle']||row['car']||row['listing']||'').toLowerCase();
         var matchedVehicle=null;
         state.vehicles.forEach(function(v){
-          if(carName.indexOf(v.model.toLowerCase())>=0||carName.indexOf(v.make.toLowerCase())>=0){
+          var mk=v.make.toLowerCase(), mo=v.model.toLowerCase();
+          if(carName.indexOf(mk)>=0 && (carName.indexOf(mo)>=0 || carName.indexOf(mo.split(' ')[0])>=0)){
+            matchedVehicle=v;
+          } else if(!matchedVehicle && carName.indexOf(mk)>=0){
             matchedVehicle=v;
           }
         });
 
-        var earnings=parseFloat((row['earnings']||row['host earnings']||row['amount']||row['total']||'0').replace(/[$,]/g,''));
+        // Turo's exact column is "Total earnings" — check that first
+        var earnings=parseFloat((row['total earnings']||row['host earnings']||row['earnings']||row['amount']||row['total']||'0').replace(/[$,\s-]/g,''));
         var fee=parseFloat((row['turo fee']||row['fee']||row['platform fee']||'0').replace(/[$,]/g,''));
-        var date=row['start date']||row['trip start']||row['date']||'';
+        var date=row['trip start']||row['start date']||row['date']||'';
         if(date){
           var dp=new Date(date);
           if(!isNaN(dp)) date=dp.toISOString().split('T')[0];
         }
-        var miles=parseFloat((row['miles driven']||row['distance']||row['miles']||'0').replace(/,/g,''));
-        var guest=row['renter']||row['guest']||row['renter name']||'';
-        var days=parseInt(row['trip length']||row['days']||'1')||1;
+        var miles=parseFloat((row['distance traveled']||row['miles driven']||row['distance']||row['miles']||'0').replace(/[,\s]/g,''))||0;
+        var guest=row['guest']||row['renter']||row['renter name']||'';
+        var days=parseInt(row['trip days']||row['trip length']||row['days']||'1')||1;
+        var status=(row['trip status']||'').toLowerCase();
 
-        if(!date||isNaN(earnings)||earnings===0){ skippedBad++; return; }
+        // Skip cancelled trips (they have $0 earnings anyway) and rows with no valid earnings
+        if(!date||isNaN(earnings)||earnings<=0){ skippedBad++; return; }
+        if(status.indexOf('cancel')>=0){ skippedBad++; return; }
 
         var newTrip={
           vehicleId:matchedVehicle?matchedVehicle.id:null,
