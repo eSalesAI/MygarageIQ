@@ -181,7 +181,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <select id="rev-filter" onchange="renderRevenue()" style="width:auto;font-size:13px;padding:7px 11px;"></select>
           <label class="btn btn-sm btn-outline" style="cursor:pointer;display:flex;align-items:center;gap:4px">
-            📥 Import Turo CSV<input type="file" id="turo-csv" accept=".csv" style="display:none" onchange="importTuroCSV(event)">
+            📥 Import Turo CSV(s)<input type="file" id="turo-csv" accept=".csv" multiple style="display:none" onchange="importTuroCSV(event)">
           </label>
           <button class="add-btn" onclick="openLogRevenue(null)">+ Log trip</button>
         </div>
@@ -1298,82 +1298,107 @@ function deleteRevenue(id){
   renderRevenue(); dbDelR(id); showToast('Removed.');
 }
 
-function importTuroCSV(event){
-  var file=event.target.files[0]; if(!file) return;
-  var reader=new FileReader();
-  reader.onload=function(e){
-    var lines=e.target.result.split('\n');
-    var headers=lines[0].split(',').map(function(h){ return h.trim().replace(/"/g,'').toLowerCase(); });
-    var imported=0;
-    var errors=[];
-
-    // Turo CSV columns vary by export type — handle common formats
-    for(var i=1;i<lines.length;i++){
-      var line=lines[i].trim(); if(!line) continue;
-      // Handle quoted CSV properly
-      var cols=[]; var cur=''; var inQ=false;
-      for(var c=0;c<line.length;c++){
-        if(line[c]==='"') inQ=!inQ;
-        else if(line[c]===','&&!inQ){ cols.push(cur.trim()); cur=''; }
-        else cur+=line[c];
-      }
-      cols.push(cur.trim());
-
-      var row={};
-      headers.forEach(function(h,idx){ row[h]=cols[idx]||''; });
-
-      // Try to find vehicle match from car name in CSV
-      var carName=(row['car']||row['vehicle']||row['listing']||'').toLowerCase();
-      var matchedVehicle=null;
-      state.vehicles.forEach(function(v){
-        var vName=(v.make+' '+v.model).toLowerCase();
-        if(carName.indexOf(v.model.toLowerCase())>=0||carName.indexOf(v.make.toLowerCase())>=0){
-          matchedVehicle=v;
-        }
-      });
-
-      // Parse earnings
-      var earnings=parseFloat((row['earnings']||row['host earnings']||row['amount']||row['total']||'0').replace(/[$,]/g,''));
-      var fee=parseFloat((row['turo fee']||row['fee']||row['platform fee']||'0').replace(/[$,]/g,''));
-      var date=row['start date']||row['trip start']||row['date']||'';
-      // Normalize date format
-      if(date){
-        var dp=new Date(date);
-        if(!isNaN(dp)) date=dp.toISOString().split('T')[0];
-      }
-      var miles=parseFloat((row['miles driven']||row['distance']||row['miles']||'0').replace(/,/g,''));
-      var guest=row['renter']||row['guest']||row['renter name']||'';
-      var days=parseInt(row['trip length']||row['days']||'1')||1;
-
-      if(!date||isNaN(earnings)||earnings===0){ errors.push('Row '+(i+1)+': skipped (no date or earnings)'); continue; }
-
-      var r={
-        id:Date.now().toString()+'_'+i,
-        vehicleId:matchedVehicle?matchedVehicle.id:null,
-        platform:'Turo',
-        date:date,
-        tripDays:days,
-        earnings:earnings,
-        platformFee:fee,
-        miles:miles||0,
-        guest:guest||null,
-        notes:'Imported from Turo CSV'
-      };
-      state.revenue.push(r);
-      dbSaveR(r);
-      imported++;
-    }
-
-    renderRevenue();
-    var msg='✅ Imported '+imported+' trip'+(imported!==1?'s':'')+' from Turo CSV.';
-    if(errors.length) msg+=' ('+errors.length+' rows skipped)';
-    showToast(msg);
-    if(!matchedVehicle&&imported>0) showToast('⚠️ Could not auto-match all trips to vehicles — edit each to assign.');
-  };
-  reader.readAsText(file);
-  event.target.value='';
+function isDuplicateTrip(newTrip){
+  return state.revenue.some(function(r){
+    return r.date===newTrip.date &&
+           Math.abs((parseFloat(r.earnings)||0)-(parseFloat(newTrip.earnings)||0))<0.01 &&
+           r.vehicleId===newTrip.vehicleId;
+  });
 }
 
+function parseCSVFile(file){
+  return new Promise(function(resolve){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var lines=e.target.result.split('\n');
+      var headers=lines[0].split(',').map(function(h){ return h.trim().replace(/"/g,'').toLowerCase(); });
+      var rows=[];
+      for(var i=1;i<lines.length;i++){
+        var line=lines[i].trim(); if(!line) continue;
+        var cols=[]; var cur=''; var inQ=false;
+        for(var c=0;c<line.length;c++){
+          if(line[c]==='"') inQ=!inQ;
+          else if(line[c]===','&&!inQ){ cols.push(cur.trim()); cur=''; }
+          else cur+=line[c];
+        }
+        cols.push(cur.trim());
+        var row={};
+        headers.forEach(function(h,idx){ row[h]=cols[idx]||''; });
+        rows.push(row);
+      }
+      resolve({file:file.name, rows:rows});
+    };
+    reader.readAsText(file);
+  });
+}
+
+function importTuroCSV(event){
+  var files=Array.prototype.slice.call(event.target.files);
+  if(!files.length) return;
+
+  showToast('Reading '+files.length+' file'+(files.length>1?'s':'')+'...');
+
+  Promise.all(files.map(parseCSVFile)).then(function(results){
+    var imported=0, skippedDupe=0, skippedBad=0;
+
+    results.forEach(function(result){
+      result.rows.forEach(function(row){
+        var carName=(row['car']||row['vehicle']||row['listing']||'').toLowerCase();
+        var matchedVehicle=null;
+        state.vehicles.forEach(function(v){
+          if(carName.indexOf(v.model.toLowerCase())>=0||carName.indexOf(v.make.toLowerCase())>=0){
+            matchedVehicle=v;
+          }
+        });
+
+        var earnings=parseFloat((row['earnings']||row['host earnings']||row['amount']||row['total']||'0').replace(/[$,]/g,''));
+        var fee=parseFloat((row['turo fee']||row['fee']||row['platform fee']||'0').replace(/[$,]/g,''));
+        var date=row['start date']||row['trip start']||row['date']||'';
+        if(date){
+          var dp=new Date(date);
+          if(!isNaN(dp)) date=dp.toISOString().split('T')[0];
+        }
+        var miles=parseFloat((row['miles driven']||row['distance']||row['miles']||'0').replace(/,/g,''));
+        var guest=row['renter']||row['guest']||row['renter name']||'';
+        var days=parseInt(row['trip length']||row['days']||'1')||1;
+
+        if(!date||isNaN(earnings)||earnings===0){ skippedBad++; return; }
+
+        var newTrip={
+          vehicleId:matchedVehicle?matchedVehicle.id:null,
+          date:date,
+          earnings:earnings
+        };
+
+        if(isDuplicateTrip(newTrip)){ skippedDupe++; return; }
+
+        var r={
+          id:Date.now().toString()+'_'+Math.random().toString(36).substr(2,6),
+          vehicleId:matchedVehicle?matchedVehicle.id:null,
+          platform:'Turo',
+          date:date,
+          tripDays:days,
+          earnings:earnings,
+          platformFee:fee,
+          miles:miles||0,
+          guest:guest||null,
+          notes:'Imported from Turo CSV ('+result.file+')'
+        };
+        state.revenue.push(r);
+        dbSaveR(r);
+        imported++;
+      });
+    });
+
+    renderRevenue();
+    var msg='✅ Imported '+imported+' trip'+(imported!==1?'s':'')+' from '+files.length+' file'+(files.length>1?'s':'')+'.';
+    if(skippedDupe) msg+=' Skipped '+skippedDupe+' duplicate'+(skippedDupe!==1?'s':'')+'.';
+    if(skippedBad) msg+=' Skipped '+skippedBad+' invalid row'+(skippedBad!==1?'s':'')+'.';
+    showToast(msg);
+  });
+
+  event.target.value='';
+}
 // ── Modal ─────────────────────────────────────────────
 function showModal(html){
   document.getElementById('modal-container').innerHTML='<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">'+html+'</div></div>';
