@@ -1112,7 +1112,7 @@ function saveEditH(id){
   r.cost=document.getElementById('lco').value||null; r.shop=document.getElementById('lsh').value.trim()||null;
   r.workDone=document.getElementById('lw').value.trim()||null; r.notes=document.getElementById('ln').value.trim()||null;
   closeModal(); renderHistory(); dbSaveH(r); showToast('✅ Record updated!');
-}
+
 
 function deleteHistory(id){
   if(!confirm('Remove this record?')) return;
