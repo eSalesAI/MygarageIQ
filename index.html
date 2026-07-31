@@ -98,6 +98,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .rev-trips-body{padding:.5rem 1.25rem 1rem;}
 .occupancy-bar{height:6px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-top:4px;width:100%;max-width:160px;}
 .occupancy-fill{height:100%;border-radius:99px;background:var(--accent);}
+.rev-chip{display:flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border-radius:99px;border:1px solid var(--border2);background:var(--bg);cursor:pointer;flex-shrink:0;transition:all .12s;white-space:nowrap;}
+.rev-chip:hover{background:var(--bg2);}
+.rev-chip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.rev-chip.active .rev-chip-sub{color:rgba(255,255,255,0.85);}
+.rev-chip-photo{width:32px;height:32px;border-radius:50%;object-fit:cover;background:var(--bg2);flex-shrink:0;}
+.rev-chip-photo-fb{width:32px;height:32px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.rev-chip-name{font-size:13px;font-weight:600;}
+.rev-chip-sub{font-size:11px;color:var(--text2);}
+.rev-summary-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:12px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:box-shadow .12s;}
+.rev-summary-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);}
 .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem;z-index:300;overflow-y:auto;}
 .modal{background:var(--bg);border-radius:var(--r);border:1px solid var(--border);padding:1.75rem;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
@@ -191,7 +201,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
       <div class="toolbar" style="margin-bottom:.6rem">
         <div class="section-title" style="margin:0">💰 Revenue & profit</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <select id="rev-filter" onchange="renderRevenue()" style="width:auto;font-size:13px;padding:7px 11px;"></select>
+          <select id="rev-filter" onchange="renderRevenue()" style="display:none"></select>
           <select id="rev-daterange" onchange="onDateRangeChange()" style="width:auto;font-size:13px;padding:7px 11px;">
             <option value="all">All time</option>
             <option value="month">This month</option>
@@ -203,6 +213,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
           </select>
         </div>
       </div>
+      <div id="rev-vehicle-tabs" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:1rem;-webkit-overflow-scrolling:touch;"></div>
       <div id="rev-custom-range" style="display:none;gap:8px;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;">
         <input type="date" id="rev-start" style="width:auto" onchange="renderRevenue()">
         <span style="font-size:13px;color:var(--text2)">to</span>
@@ -1234,25 +1245,24 @@ function inDateRange(dateStr, bounds){
 }
 
 // ── Revenue tab render ────────────────────────────────
+function selectRevVehicle(id){
+  document.getElementById('rev-filter').value=id;
+  renderRevenue();
+}
+
 function renderRevenue(){
   var sel=document.getElementById('rev-filter');
-  var prev=sel.value;
-  sel.innerHTML='<option value="all">All vehicles</option>'+state.vehicles.map(function(v){ return '<option value="'+v.id+'">'+esc(v.year+' '+v.make+' '+v.model)+'</option>'; }).join('');
-  if(prev) sel.value=prev;
   var fv=sel.value||'all';
 
   var rangeVal=(document.getElementById('rev-daterange')||{}).value||'all';
   var bounds=getDateRangeBounds(rangeVal);
 
   var allRecs=state.revenue.filter(function(r){ return inDateRange(r.date,bounds); });
-  var recs=allRecs.filter(function(r){ return fv==='all'||r.vehicleId===fv; });
 
-  var vIds=fv==='all'?state.vehicles.map(function(v){ return v.id; }):[fv];
-  var expRecs=state.history.filter(function(h){ return vIds.indexOf(h.vehicleId)>=0 && inDateRange(h.date,bounds); });
-
-  var totalRev=recs.reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
-  var totalExp=expRecs.reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0);
-  var totalTrips=recs.length;
+  var vIdsAll=state.vehicles.map(function(v){ return v.id; });
+  var totalRev=allRecs.reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
+  var totalExp=state.history.filter(function(h){ return vIdsAll.indexOf(h.vehicleId)>=0 && inDateRange(h.date,bounds); }).reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0);
+  var totalTrips=allRecs.length;
   var netProfit=totalRev-totalExp;
 
   document.getElementById('rev-summary').innerHTML=
@@ -1261,85 +1271,138 @@ function renderRevenue(){
     '<div class="metric"><div class="metric-label">Total expenses</div><div class="metric-value" style="color:var(--red)">$'+totalExp.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>'+
     '<div class="metric"><div class="metric-label">Net profit</div><div class="metric-value" style="color:'+(netProfit>=0?'var(--green)':'var(--red)')+'">$'+Math.abs(netProfit).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+(netProfit<0?' (loss)':'')+'</div></div>';
 
+  // Days available for occupancy calc
+  var rangeStart=bounds.start, rangeEnd=bounds.end||now_();
+  if(!rangeStart){
+    if(allRecs.length){
+      var dates=allRecs.map(function(r){ return new Date(r.date).getTime(); });
+      rangeStart=new Date(Math.min.apply(null,dates));
+    } else {
+      rangeStart=rangeEnd;
+    }
+  }
+  var daysAvailable=Math.max(1,Math.round((rangeEnd-rangeStart)/(1000*60*60*24))+1);
+
+  // Which vehicles have trips in this range (for chip list — only show relevant ones)
+  var vehiclesWithTrips=state.vehicles.filter(function(v){ return allRecs.some(function(r){ return r.vehicleId===v.id; }); });
+  var hasUnmatched=allRecs.some(function(r){ return !r.vehicleId; });
+
+  // ── Build vehicle chip tabs ──
+  var chipsHtml='<div class="rev-chip'+(fv==='all'?' active':'')+'" onclick="selectRevVehicle(\'all\')"><div class="rev-chip-photo-fb">📊</div><div><div class="rev-chip-name">All vehicles</div><div class="rev-chip-sub">$'+Math.round(totalRev).toLocaleString()+'</div></div></div>';
+
+  vehiclesWithTrips.forEach(function(v){
+    var vRev=allRecs.filter(function(r){ return r.vehicleId===v.id; }).reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
+    var photo=v.customPhoto||getPhoto(v.make,v.model);
+    var icon=getIcon(v.make);
+    var photoHtml=photo?'<img class="rev-chip-photo" src="'+photo+'" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="rev-chip-photo-fb" style="display:none">'+icon+'</div>':'<div class="rev-chip-photo-fb">'+icon+'</div>';
+    chipsHtml+='<div class="rev-chip'+(fv===v.id?' active':'')+'" onclick="selectRevVehicle(\''+v.id+'\')">'+photoHtml+'<div><div class="rev-chip-name">'+esc(v.make+' '+v.model)+'</div><div class="rev-chip-sub">$'+Math.round(vRev).toLocaleString()+'</div></div></div>';
+  });
+
+  if(hasUnmatched){
+    var uRev=allRecs.filter(function(r){ return !r.vehicleId; }).reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
+    chipsHtml+='<div class="rev-chip'+(fv==='unmatched'?' active':'')+'" onclick="selectRevVehicle(\'unmatched\')"><div class="rev-chip-photo-fb">⚠️</div><div><div class="rev-chip-name">Unmatched</div><div class="rev-chip-sub">$'+Math.round(uRev).toLocaleString()+'</div></div></div>';
+  }
+
+  document.getElementById('rev-vehicle-tabs').innerHTML=chipsHtml;
+
   var list=document.getElementById('revenue-list');
-  if(!recs.length){
+
+  if(!allRecs.length){
     list.innerHTML='<div class="empty-state"><div class="empty-icon">💰</div><div class="empty-title">No trips in this range</div><p>Try a different date range, or click "+ Log trip" / import a Turo CSV.</p></div>';
     return;
   }
 
-  // Days available for occupancy: use the selected range, or fall back to
-  // earliest trip date → today if "All time" is selected
-  var rangeStart=bounds.start, rangeEnd=bounds.end||now_();
-  if(!rangeStart){
-    var dates=recs.map(function(r){ return new Date(r.date).getTime(); });
-    rangeStart=new Date(Math.min.apply(null,dates));
+  // ── "All vehicles" view: compact summary cards, click to drill in ──
+  if(fv==='all'){
+    var sorted=vehiclesWithTrips.slice().sort(function(a,b){
+      var ra=allRecs.filter(function(r){ return r.vehicleId===a.id; }).reduce(function(s,r){ return s+(parseFloat(r.earnings)||0); },0);
+      var rb=allRecs.filter(function(r){ return r.vehicleId===b.id; }).reduce(function(s,r){ return s+(parseFloat(r.earnings)||0); },0);
+      return rb-ra;
+    });
+    var html='';
+    sorted.forEach(function(v){
+      var vTrips=allRecs.filter(function(r){ return r.vehicleId===v.id; });
+      var vRev=vTrips.reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
+      var vExp=state.history.filter(function(h){ return h.vehicleId===v.id && inDateRange(h.date,bounds); }).reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0);
+      var vNet=vRev-vExp;
+      var vDaysRented=vTrips.reduce(function(a,r){ return a+(parseInt(r.tripDays)||1); },0);
+      var occupancy=Math.min(100,Math.round((vDaysRented/daysAvailable)*100));
+      var photo=v.customPhoto||getPhoto(v.make,v.model);
+      var icon=getIcon(v.make);
+      var photoHtml=photo?'<img class="rev-vehicle-photo" src="'+photo+'" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="rev-vehicle-photo-fallback" style="display:none">'+icon+'</div>':'<div class="rev-vehicle-photo-fallback">'+icon+'</div>';
+
+      html+='<div class="rev-summary-card" onclick="selectRevVehicle(\''+v.id+'\')">'+
+        photoHtml+
+        '<div style="flex:1;min-width:180px">'+
+        '<div class="rev-vehicle-name">'+esc(v.year+' '+v.make+' '+v.model)+(v.nickname?' · '+esc(v.nickname):'')+'</div>'+
+        '<div class="rev-vehicle-stats">'+
+        '<span class="rev-stat" style="background:var(--green-bg);color:var(--green)">$'+Math.round(vRev).toLocaleString()+' revenue</span>'+
+        (vExp>0?'<span class="rev-stat" style="background:var(--red-bg);color:var(--red)">$'+Math.round(vExp).toLocaleString()+' expenses</span>':'')+
+        '<span class="rev-stat" style="background:'+(vNet>=0?'var(--green-bg)':'var(--red-bg)')+';color:'+(vNet>=0?'var(--green)':'var(--red)')+'">$'+Math.round(Math.abs(vNet)).toLocaleString()+' '+(vNet>=0?'profit':'loss')+'</span>'+
+        '<span class="rev-stat" style="background:var(--blue-bg);color:var(--blue)">'+vTrips.length+' trip'+(vTrips.length!==1?'s':'')+'</span>'+
+        '</div>'+
+        '<div style="margin-top:6px;font-size:11px;color:var(--text2)">Occupancy: '+occupancy+'% ('+vDaysRented+' of '+daysAvailable+' days)</div>'+
+        '<div class="occupancy-bar"><div class="occupancy-fill" style="width:'+occupancy+'%"></div></div>'+
+        '</div>'+
+        '<div style="font-size:20px;color:var(--text2)">→</div>'+
+        '</div>';
+    });
+    list.innerHTML=html;
+    return;
   }
-  var daysAvailable=Math.max(1,Math.round((rangeEnd-rangeStart)/(1000*60*60*24))+1);
 
-  var vehiclesToShow=fv==='all'?state.vehicles.slice():state.vehicles.filter(function(v){ return v.id===fv; });
-  // Only show vehicles that actually have trips in range, keep 'all' order by revenue desc
-  vehiclesToShow=vehiclesToShow.filter(function(v){ return recs.some(function(r){ return r.vehicleId===v.id; }); });
-  vehiclesToShow.sort(function(a,b){
-    var ra=recs.filter(function(r){ return r.vehicleId===a.id; }).reduce(function(s,r){ return s+(parseFloat(r.earnings)||0); },0);
-    var rb=recs.filter(function(r){ return r.vehicleId===b.id; }).reduce(function(s,r){ return s+(parseFloat(r.earnings)||0); },0);
-    return rb-ra;
-  });
-
-  // Unmatched trips (no vehicleId) shown in their own section
-  var unmatched=recs.filter(function(r){ return !r.vehicleId; });
-
-  var html='';
-  vehiclesToShow.forEach(function(v){
-    var vTrips=recs.filter(function(r){ return r.vehicleId===v.id; }).sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
-    var vRev=vTrips.reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
-    var vExp=state.history.filter(function(h){ return h.vehicleId===v.id && inDateRange(h.date,bounds); }).reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0);
-    var vNet=vRev-vExp;
-    var vDaysRented=vTrips.reduce(function(a,r){ return a+(parseInt(r.tripDays)||1); },0);
-    var occupancy=Math.min(100,Math.round((vDaysRented/daysAvailable)*100));
-    var photo=v.customPhoto||getPhoto(v.make,v.model);
-    var icon=getIcon(v.make);
-    var photoHtml=photo?'<img class="rev-vehicle-photo" src="'+photo+'" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="rev-vehicle-photo-fallback" style="display:none">'+icon+'</div>':'<div class="rev-vehicle-photo-fallback">'+icon+'</div>';
-
-    html+='<div class="rev-vehicle-card">'+
-      '<div class="rev-vehicle-header">'+
-      photoHtml+
-      '<div class="rev-vehicle-info">'+
-      '<div class="rev-vehicle-name">'+esc(v.year+' '+v.make+' '+v.model)+(v.nickname?' · '+esc(v.nickname):'')+'</div>'+
-      '<div class="rev-vehicle-stats">'+
-      '<span class="rev-stat badge-green" style="background:var(--green-bg);color:var(--green)">$'+vRev.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})+' revenue</span>'+
-      (vExp>0?'<span class="rev-stat" style="background:var(--red-bg);color:var(--red)">$'+vExp.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})+' expenses</span>':'')+
-      '<span class="rev-stat" style="background:'+(vNet>=0?'var(--green-bg)':'var(--red-bg)')+';color:'+(vNet>=0?'var(--green)':'var(--red)')+'">$'+Math.abs(vNet).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})+' '+(vNet>=0?'profit':'loss')+'</span>'+
-      '<span class="rev-stat" style="background:var(--blue-bg);color:var(--blue)">'+vTrips.length+' trip'+(vTrips.length!==1?'s':'')+'</span>'+
-      '</div>'+
-      '<div style="margin-top:6px;display:flex;align-items:center;gap:8px">'+
-      '<span style="font-size:11px;color:var(--text2)">Occupancy: '+occupancy+'% ('+vDaysRented+' of '+daysAvailable+' days)</span>'+
-      '</div>'+
-      '<div class="occupancy-bar"><div class="occupancy-fill" style="width:'+occupancy+'%"></div></div>'+
-      '</div>'+
-      '<button class="add-btn" style="flex-shrink:0" onclick="openLogRevenue(\''+v.id+'\')">+ Trip</button>'+
-      '</div>'+
-      '<div class="rev-trips-body">'+
-      vTrips.map(function(r){ return revTripRow(r,v); }).join('')+
-      '</div>'+
-      '</div>';
-  });
-
-  if(unmatched.length){
-    var uRev=unmatched.reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
-    html+='<div class="rev-vehicle-card">'+
+  // ── Single vehicle view: full trip list ──
+  if(fv==='unmatched'){
+    var uTrips=allRecs.filter(function(r){ return !r.vehicleId; }).sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+    var uRev2=uTrips.reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
+    list.innerHTML='<div class="rev-vehicle-card">'+
       '<div class="rev-vehicle-header">'+
       '<div class="rev-vehicle-photo-fallback">⚠️</div>'+
       '<div class="rev-vehicle-info">'+
       '<div class="rev-vehicle-name">Unmatched trips</div>'+
-      '<div class="rev-vehicle-stats"><span class="rev-stat" style="background:var(--amber-bg);color:var(--amber)">$'+uRev.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})+' · '+unmatched.length+' trip'+(unmatched.length!==1?'s':'')+'</span></div>'+
-      '<div style="font-size:11px;color:var(--text2);margin-top:4px">These trips could not be auto-matched to a vehicle. Edit each to assign the right car.</div>'+
+      '<div class="rev-vehicle-stats"><span class="rev-stat" style="background:var(--amber-bg);color:var(--amber)">$'+uRev2.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})+' · '+uTrips.length+' trip'+(uTrips.length!==1?'s':'')+'</span></div>'+
+      '<div style="font-size:11px;color:var(--text2);margin-top:4px">Edit each trip to assign the correct vehicle.</div>'+
       '</div></div>'+
       '<div class="rev-trips-body">'+
-      unmatched.sort(function(a,b){ return new Date(b.date)-new Date(a.date); }).map(function(r){ return revTripRow(r,null); }).join('')+
+      uTrips.map(function(r){ return revTripRow(r,null); }).join('')+
       '</div></div>';
+    return;
   }
 
-  list.innerHTML=html;
+  var v=state.vehicles.find(function(x){ return x.id===fv; });
+  if(!v){ selectRevVehicle('all'); return; }
+  var vTrips=allRecs.filter(function(r){ return r.vehicleId===v.id; }).sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+  var vRev=vTrips.reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
+  var vExp=state.history.filter(function(h){ return h.vehicleId===v.id && inDateRange(h.date,bounds); }).reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0);
+  var vNet=vRev-vExp;
+  var vDaysRented=vTrips.reduce(function(a,r){ return a+(parseInt(r.tripDays)||1); },0);
+  var occupancy=Math.min(100,Math.round((vDaysRented/daysAvailable)*100));
+  var photo=v.customPhoto||getPhoto(v.make,v.model);
+  var icon=getIcon(v.make);
+  var photoHtml=photo?'<img class="rev-vehicle-photo" src="'+photo+'" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="rev-vehicle-photo-fallback" style="display:none">'+icon+'</div>':'<div class="rev-vehicle-photo-fallback">'+icon+'</div>';
+
+  list.innerHTML='<div class="rev-vehicle-card">'+
+    '<div class="rev-vehicle-header">'+
+    photoHtml+
+    '<div class="rev-vehicle-info">'+
+    '<div class="rev-vehicle-name">'+esc(v.year+' '+v.make+' '+v.model)+(v.nickname?' · '+esc(v.nickname):'')+'</div>'+
+    '<div class="rev-vehicle-stats">'+
+    '<span class="rev-stat" style="background:var(--green-bg);color:var(--green)">$'+vRev.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})+' revenue</span>'+
+    (vExp>0?'<span class="rev-stat" style="background:var(--red-bg);color:var(--red)">$'+vExp.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})+' expenses</span>':'')+
+    '<span class="rev-stat" style="background:'+(vNet>=0?'var(--green-bg)':'var(--red-bg)')+';color:'+(vNet>=0?'var(--green)':'var(--red)')+'">$'+Math.abs(vNet).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})+' '+(vNet>=0?'profit':'loss')+'</span>'+
+    '<span class="rev-stat" style="background:var(--blue-bg);color:var(--blue)">'+vTrips.length+' trip'+(vTrips.length!==1?'s':'')+'</span>'+
+    '</div>'+
+    '<div style="margin-top:6px;display:flex;align-items:center;gap:8px">'+
+    '<span style="font-size:11px;color:var(--text2)">Occupancy: '+occupancy+'% ('+vDaysRented+' of '+daysAvailable+' days)</span>'+
+    '</div>'+
+    '<div class="occupancy-bar"><div class="occupancy-fill" style="width:'+occupancy+'%"></div></div>'+
+    '</div>'+
+    '<button class="add-btn" style="flex-shrink:0" onclick="openLogRevenue(\''+v.id+'\')">+ Trip</button>'+
+    '</div>'+
+    '<div class="rev-trips-body">'+
+    vTrips.map(function(r){ return revTripRow(r,v); }).join('')+
+    '</div>'+
+    '</div>';
 }
 
 function now_(){ return new Date(); }
