@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>FleetFolio</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTQiIGZpbGw9IiMxODVGQTUiLz48dGV4dCB4PSIzMiIgeT0iNDUiIGZvbnQtc2l6ZT0iMzQiIHRleHQtYW5jaG9yPSJtaWRkbGUiPvCfmpc8L3RleHQ+PC9zdmc+">
 <style>
 :root{--bg:#fff;--bg2:#f5f5f3;--bg3:#efefec;--text:#1a1a18;--text2:#6b6b67;--border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);--accent:#185FA5;--accent-dark:#0C447C;--red:#A32D2D;--red-bg:#FCEBEB;--red-border:#F7C1C1;--amber:#854F0B;--amber-bg:#FAEEDA;--green:#3B6D11;--green-bg:#EAF3DE;--blue:#185FA5;--blue-bg:#E6F1FB;--purple:#3C3489;--purple-bg:#EEEDFE;--r:10px;--rs:7px;}
 @media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--text:#f0efe8;--text2:#a0a09a;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);--red-bg:#3a1515;--amber-bg:#3a2a08;--green-bg:#1a2e0a;--blue-bg:#0c2640;--purple-bg:#1e1a40;}}
@@ -86,6 +87,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sep{border:none;border-top:1px solid var(--border);margin:1.25rem 0;}
 .cost-summary{font-size:13px;color:var(--text2);margin-bottom:1rem;}
 .cost-summary strong{color:var(--text);}
+.rev-vehicle-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);margin-bottom:16px;overflow:hidden;}
+.rev-vehicle-header{display:flex;gap:12px;padding:1rem 1.25rem;border-bottom:1px solid var(--border);align-items:center;flex-wrap:wrap;}
+.rev-vehicle-photo{width:64px;height:64px;border-radius:8px;object-fit:cover;flex-shrink:0;background:var(--bg2);}
+.rev-vehicle-photo-fallback{width:64px;height:64px;border-radius:8px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;}
+.rev-vehicle-info{flex:1;min-width:180px;}
+.rev-vehicle-name{font-size:15px;font-weight:700;}
+.rev-vehicle-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.rev-stat{font-size:11px;padding:3px 9px;border-radius:99px;font-weight:600;}
+.rev-trips-body{padding:.5rem 1.25rem 1rem;}
+.occupancy-bar{height:6px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-top:4px;width:100%;max-width:160px;}
+.occupancy-fill{height:100%;border-radius:99px;background:var(--accent);}
 .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem;z-index:300;overflow-y:auto;}
 .modal{background:var(--bg);border-radius:var(--r);border:1px solid var(--border);padding:1.75rem;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
@@ -133,10 +145,10 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
   </div>
   <div class="app">
     <div class="tabs">
-      <button class="tab active" id="tab0" onclick="setTab(0)">Dashboard</button>
-      <button class="tab" id="tab1" onclick="setTab(1)">Service schedule</button>
-      <button class="tab" id="tab2" onclick="setTab(2)">Service history</button>
-      <button class="tab" id="tab3" onclick="setTab(3)">Revenue</button>
+      <button class="tab active" id="tab0" onclick="setTab(0)">🏠 Dashboard</button>
+      <button class="tab" id="tab1" onclick="setTab(1)">🔧 Service schedule</button>
+      <button class="tab" id="tab2" onclick="setTab(2)">📋 Service history</button>
+      <button class="tab" id="tab3" onclick="setTab(3)">💰 Revenue</button>
     </div>
     <div id="view-dashboard">
       <div class="summary-grid" id="summary-grid"></div>
@@ -176,14 +188,36 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
 </div>
 
     <div id="view-revenue" style="display:none">
-      <div class="toolbar">
-        <div class="section-title" style="margin:0">Revenue & profit</div>
+      <div class="toolbar" style="margin-bottom:.6rem">
+        <div class="section-title" style="margin:0">💰 Revenue & profit</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <select id="rev-filter" onchange="renderRevenue()" style="width:auto;font-size:13px;padding:7px 11px;"></select>
+          <select id="rev-daterange" onchange="onDateRangeChange()" style="width:auto;font-size:13px;padding:7px 11px;">
+            <option value="all">All time</option>
+            <option value="month">This month</option>
+            <option value="last30">Last 30 days</option>
+            <option value="last90">Last 90 days</option>
+            <option value="year">This year</option>
+            <option value="lastyear">Last year</option>
+            <option value="custom">Custom range…</option>
+          </select>
+        </div>
+      </div>
+      <div id="rev-custom-range" style="display:none;gap:8px;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;">
+        <input type="date" id="rev-start" style="width:auto" onchange="renderRevenue()">
+        <span style="font-size:13px;color:var(--text2)">to</span>
+        <input type="date" id="rev-end" style="width:auto" onchange="renderRevenue()">
+      </div>
+      <div class="toolbar" style="margin-bottom:1rem">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <label class="btn btn-sm btn-outline" style="cursor:pointer;display:flex;align-items:center;gap:4px">
             📥 Import Turo CSV(s)<input type="file" id="turo-csv" accept=".csv" multiple style="display:none" onchange="importTuroCSV(event)">
           </label>
-          <button class="btn btn-sm btn-danger" onclick="clearImportedTrips()">🗑 Clear imported trips</button>
+          <button class="btn btn-sm btn-danger" onclick="clearImportedTrips()">🗑 Clear imported</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-sm btn-outline" onclick="exportRevenueCSV()">📄 Export CSV</button>
+          <button class="btn btn-sm btn-outline" onclick="exportRevenuePDF()">🖨️ Export PDF</button>
           <button class="add-btn" onclick="openLogRevenue(null)">+ Log trip</button>
         </div>
       </div>
@@ -1159,20 +1193,66 @@ function deleteHistory(id){
 // ── Revenue ───────────────────────────────────────────
 var PLATFORMS=['Turo','Getaround','HyreCar','Outdoorsy','RVshare','Direct rental','Other'];
 
+// ── Date range helpers ────────────────────────────────
+function getDateRangeBounds(filterVal){
+  var now=new Date();
+  var start=null, end=null;
+  if(filterVal==='month'){
+    start=new Date(now.getFullYear(),now.getMonth(),1);
+    end=new Date(now.getFullYear(),now.getMonth()+1,0);
+  } else if(filterVal==='last30'){
+    end=now; start=new Date(now.getTime()-30*24*60*60*1000);
+  } else if(filterVal==='last90'){
+    end=now; start=new Date(now.getTime()-90*24*60*60*1000);
+  } else if(filterVal==='year'){
+    start=new Date(now.getFullYear(),0,1);
+    end=new Date(now.getFullYear(),11,31);
+  } else if(filterVal==='lastyear'){
+    start=new Date(now.getFullYear()-1,0,1);
+    end=new Date(now.getFullYear()-1,11,31);
+  } else if(filterVal==='custom'){
+    var s=document.getElementById('rev-start').value;
+    var e=document.getElementById('rev-end').value;
+    start=s?new Date(s):null;
+    end=e?new Date(e):null;
+  }
+  return {start:start,end:end};
+}
+
+function onDateRangeChange(){
+  var v=document.getElementById('rev-daterange').value;
+  document.getElementById('rev-custom-range').style.display=(v==='custom')?'flex':'none';
+  if(v!=='custom') renderRevenue();
+}
+
+function inDateRange(dateStr, bounds){
+  if(!bounds.start && !bounds.end) return true;
+  var d=new Date(dateStr);
+  if(bounds.start && d<bounds.start) return false;
+  if(bounds.end && d>new Date(bounds.end.getTime()+24*60*60*1000-1)) return false;
+  return true;
+}
+
+// ── Revenue tab render ────────────────────────────────
 function renderRevenue(){
   var sel=document.getElementById('rev-filter');
   var prev=sel.value;
   sel.innerHTML='<option value="all">All vehicles</option>'+state.vehicles.map(function(v){ return '<option value="'+v.id+'">'+esc(v.year+' '+v.make+' '+v.model)+'</option>'; }).join('');
   if(prev) sel.value=prev;
   var fv=sel.value||'all';
-  var recs=state.revenue.filter(function(r){ return fv==='all'||r.vehicleId===fv; }).sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
 
-  // Summary metrics
-  var totalRev=recs.reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
-  var totalMi=recs.reduce(function(a,r){ return a+(parseFloat(r.miles)||0); },0);
-  var totalTrips=recs.length;
+  var rangeVal=(document.getElementById('rev-daterange')||{}).value||'all';
+  var bounds=getDateRangeBounds(rangeVal);
+
+  var allRecs=state.revenue.filter(function(r){ return inDateRange(r.date,bounds); });
+  var recs=allRecs.filter(function(r){ return fv==='all'||r.vehicleId===fv; });
+
   var vIds=fv==='all'?state.vehicles.map(function(v){ return v.id; }):[fv];
-  var totalExp=state.history.filter(function(h){ return vIds.indexOf(h.vehicleId)>=0; }).reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0);
+  var expRecs=state.history.filter(function(h){ return vIds.indexOf(h.vehicleId)>=0 && inDateRange(h.date,bounds); });
+
+  var totalRev=recs.reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
+  var totalExp=expRecs.reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0);
+  var totalTrips=recs.length;
   var netProfit=totalRev-totalExp;
 
   document.getElementById('rev-summary').innerHTML=
@@ -1183,47 +1263,200 @@ function renderRevenue(){
 
   var list=document.getElementById('revenue-list');
   if(!recs.length){
-    list.innerHTML='<div class="empty-state"><div class="empty-icon">💰</div><div class="empty-title">No trips logged yet</div><p>Click "+ Log trip" to add rental income, or import your Turo CSV.</p></div>';
+    list.innerHTML='<div class="empty-state"><div class="empty-icon">💰</div><div class="empty-title">No trips in this range</div><p>Try a different date range, or click "+ Log trip" / import a Turo CSV.</p></div>';
     return;
   }
 
-  // Group by month
-  var byMonth={};
-  recs.forEach(function(r){
-    var mo=r.date.substring(0,7);
-    if(!byMonth[mo]) byMonth[mo]={trips:[],rev:0};
-    byMonth[mo].trips.push(r);
-    byMonth[mo].rev+=(parseFloat(r.earnings)||0);
+  // Days available for occupancy: use the selected range, or fall back to
+  // earliest trip date → today if "All time" is selected
+  var rangeStart=bounds.start, rangeEnd=bounds.end||now_();
+  if(!rangeStart){
+    var dates=recs.map(function(r){ return new Date(r.date).getTime(); });
+    rangeStart=new Date(Math.min.apply(null,dates));
+  }
+  var daysAvailable=Math.max(1,Math.round((rangeEnd-rangeStart)/(1000*60*60*24))+1);
+
+  var vehiclesToShow=fv==='all'?state.vehicles.slice():state.vehicles.filter(function(v){ return v.id===fv; });
+  // Only show vehicles that actually have trips in range, keep 'all' order by revenue desc
+  vehiclesToShow=vehiclesToShow.filter(function(v){ return recs.some(function(r){ return r.vehicleId===v.id; }); });
+  vehiclesToShow.sort(function(a,b){
+    var ra=recs.filter(function(r){ return r.vehicleId===a.id; }).reduce(function(s,r){ return s+(parseFloat(r.earnings)||0); },0);
+    var rb=recs.filter(function(r){ return r.vehicleId===b.id; }).reduce(function(s,r){ return s+(parseFloat(r.earnings)||0); },0);
+    return rb-ra;
   });
 
+  // Unmatched trips (no vehicleId) shown in their own section
+  var unmatched=recs.filter(function(r){ return !r.vehicleId; });
+
   var html='';
-  Object.keys(byMonth).sort().reverse().forEach(function(mo){
-    var d=new Date(mo+'-01');
-    var label=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
-    html+='<div style="font-size:13px;font-weight:600;margin:1.25rem 0 .5rem;display:flex;justify-content:space-between;align-items:center">'+
-      '<span style="color:var(--text2)">'+label+'</span>'+
-      '<span style="color:var(--green);font-weight:700">$'+byMonth[mo].rev.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>'+
+  vehiclesToShow.forEach(function(v){
+    var vTrips=recs.filter(function(r){ return r.vehicleId===v.id; }).sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+    var vRev=vTrips.reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
+    var vExp=state.history.filter(function(h){ return h.vehicleId===v.id && inDateRange(h.date,bounds); }).reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0);
+    var vNet=vRev-vExp;
+    var vDaysRented=vTrips.reduce(function(a,r){ return a+(parseInt(r.tripDays)||1); },0);
+    var occupancy=Math.min(100,Math.round((vDaysRented/daysAvailable)*100));
+    var photo=v.customPhoto||getPhoto(v.make,v.model);
+    var icon=getIcon(v.make);
+    var photoHtml=photo?'<img class="rev-vehicle-photo" src="'+photo+'" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="rev-vehicle-photo-fallback" style="display:none">'+icon+'</div>':'<div class="rev-vehicle-photo-fallback">'+icon+'</div>';
+
+    html+='<div class="rev-vehicle-card">'+
+      '<div class="rev-vehicle-header">'+
+      photoHtml+
+      '<div class="rev-vehicle-info">'+
+      '<div class="rev-vehicle-name">'+esc(v.year+' '+v.make+' '+v.model)+(v.nickname?' · '+esc(v.nickname):'')+'</div>'+
+      '<div class="rev-vehicle-stats">'+
+      '<span class="rev-stat badge-green" style="background:var(--green-bg);color:var(--green)">$'+vRev.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})+' revenue</span>'+
+      (vExp>0?'<span class="rev-stat" style="background:var(--red-bg);color:var(--red)">$'+vExp.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})+' expenses</span>':'')+
+      '<span class="rev-stat" style="background:'+(vNet>=0?'var(--green-bg)':'var(--red-bg)')+';color:'+(vNet>=0?'var(--green)':'var(--red)')+'">$'+Math.abs(vNet).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})+' '+(vNet>=0?'profit':'loss')+'</span>'+
+      '<span class="rev-stat" style="background:var(--blue-bg);color:var(--blue)">'+vTrips.length+' trip'+(vTrips.length!==1?'s':'')+'</span>'+
+      '</div>'+
+      '<div style="margin-top:6px;display:flex;align-items:center;gap:8px">'+
+      '<span style="font-size:11px;color:var(--text2)">Occupancy: '+occupancy+'% ('+vDaysRented+' of '+daysAvailable+' days)</span>'+
+      '</div>'+
+      '<div class="occupancy-bar"><div class="occupancy-fill" style="width:'+occupancy+'%"></div></div>'+
+      '</div>'+
+      '<button class="add-btn" style="flex-shrink:0" onclick="openLogRevenue(\''+v.id+'\')">+ Trip</button>'+
+      '</div>'+
+      '<div class="rev-trips-body">'+
+      vTrips.map(function(r){ return revTripRow(r,v); }).join('')+
+      '</div>'+
       '</div>';
-    byMonth[mo].trips.forEach(function(r){
-      var v=state.vehicles.find(function(x){ return x.id===r.vehicleId; });
-      var vn=v?esc(v.year+' '+v.make+' '+v.model):'Unknown vehicle';
-      html+='<div class="history-card">'+
-        '<div class="history-header">'+
-        '<div>'+
-        '<div class="history-name">'+esc(r.platform||'Rental')+' — '+vn+'</div>'+
-        '<div class="history-meta">'+r.date+(r.miles?' · '+Number(r.miles).toLocaleString()+' mi driven':'')+(r.tripDays?' · '+r.tripDays+' day'+(r.tripDays>1?'s':''):'')+(r.guest?' · Guest: '+esc(r.guest):'')+'</div>'+
-        '<span class="badge badge-green" style="margin-top:6px;display:inline-flex;font-size:13px;padding:4px 12px">$'+parseFloat(r.earnings).toFixed(2)+'</span>'+
-        (r.platformFee?'<span class="badge badge-gray" style="margin-top:6px;margin-left:4px;display:inline-flex">Fee: $'+parseFloat(r.platformFee).toFixed(2)+'</span>':'')+
-        '</div>'+
-        '<div style="display:flex;gap:6px">'+
-        '<button class="btn btn-sm btn-outline" onclick="editRevenue(\''+r.id+'\')">✏️ Edit</button>'+
-        '<button class="btn btn-sm btn-danger" onclick="deleteRevenue(\''+r.id+'\')">Remove</button>'+
-        '</div></div>'+
-        (r.notes?'<div class="history-detail"><div class="history-detail-label">Notes</div>'+esc(r.notes)+'</div>':'')+
-        '</div>';
-    });
   });
+
+  if(unmatched.length){
+    var uRev=unmatched.reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
+    html+='<div class="rev-vehicle-card">'+
+      '<div class="rev-vehicle-header">'+
+      '<div class="rev-vehicle-photo-fallback">⚠️</div>'+
+      '<div class="rev-vehicle-info">'+
+      '<div class="rev-vehicle-name">Unmatched trips</div>'+
+      '<div class="rev-vehicle-stats"><span class="rev-stat" style="background:var(--amber-bg);color:var(--amber)">$'+uRev.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})+' · '+unmatched.length+' trip'+(unmatched.length!==1?'s':'')+'</span></div>'+
+      '<div style="font-size:11px;color:var(--text2);margin-top:4px">These trips could not be auto-matched to a vehicle. Edit each to assign the right car.</div>'+
+      '</div></div>'+
+      '<div class="rev-trips-body">'+
+      unmatched.sort(function(a,b){ return new Date(b.date)-new Date(a.date); }).map(function(r){ return revTripRow(r,null); }).join('')+
+      '</div></div>';
+  }
+
   list.innerHTML=html;
+}
+
+function now_(){ return new Date(); }
+
+function revTripRow(r,v){
+  var vn=v?esc(v.year+' '+v.make+' '+v.model):'';
+  return '<div class="history-card" style="margin-bottom:8px">'+
+    '<div class="history-header">'+
+    '<div><div class="history-name">'+esc(r.platform||'Rental')+(vn?' — '+vn:'')+'</div>'+
+    '<div class="history-meta">'+r.date+(r.miles?' · '+Number(r.miles).toLocaleString()+' mi driven':'')+(r.tripDays?' · '+r.tripDays+' day'+(r.tripDays>1?'s':''):'')+(r.guest?' · Guest: '+esc(r.guest):'')+'</div>'+
+    '<span class="badge badge-green" style="margin-top:6px;display:inline-flex;font-size:13px;padding:4px 12px">$'+parseFloat(r.earnings).toFixed(2)+'</span>'+
+    (r.platformFee?'<span class="badge badge-gray" style="margin-top:6px;margin-left:4px;display:inline-flex">Fee: $'+parseFloat(r.platformFee).toFixed(2)+'</span>':'')+
+    '</div>'+
+    '<div style="display:flex;gap:6px">'+
+    '<button class="btn btn-sm btn-outline" onclick="editRevenue(\''+r.id+'\')">✏️ Edit</button>'+
+    '<button class="btn btn-sm btn-danger" onclick="deleteRevenue(\''+r.id+'\')">Remove</button>'+
+    '</div></div>'+
+    (r.notes?'<div class="history-detail"><div class="history-detail-label">Notes</div>'+esc(r.notes)+'</div>':'')+
+    '</div>';
+}
+
+// ── Export CSV ────────────────────────────────────────
+function exportRevenueCSV(){
+  var rangeVal=(document.getElementById('rev-daterange')||{}).value||'all';
+  var bounds=getDateRangeBounds(rangeVal);
+  var fv=(document.getElementById('rev-filter')||{}).value||'all';
+  var vIds=fv==='all'?state.vehicles.map(function(v){ return v.id; }):[fv];
+
+  var rows=[['Type','Date','Vehicle','Category/Platform','Description','Amount']];
+
+  state.revenue.filter(function(r){ return inDateRange(r.date,bounds) && (fv==='all'||r.vehicleId===fv); }).forEach(function(r){
+    var v=state.vehicles.find(function(x){ return x.id===r.vehicleId; });
+    var vn=v?(v.year+' '+v.make+' '+v.model):'Unmatched';
+    rows.push(['Revenue',r.date,vn,r.platform||'',(r.guest?'Guest: '+r.guest:''),parseFloat(r.earnings||0).toFixed(2)]);
+  });
+
+  state.history.filter(function(h){ return vIds.indexOf(h.vehicleId)>=0 && inDateRange(h.date,bounds); }).forEach(function(h){
+    var v=state.vehicles.find(function(x){ return x.id===h.vehicleId; });
+    var vn=v?(v.year+' '+v.make+' '+v.model):'Unknown';
+    rows.push(['Expense',h.date,vn,h.serviceName||'',h.shop||'','-'+parseFloat(h.cost||0).toFixed(2)]);
+  });
+
+  rows.sort(function(a,b){ if(a[0]==='Type') return 0; return new Date(a[1])-new Date(b[1]); });
+
+  var csv=rows.map(function(row){
+    return row.map(function(cell){
+      var s=String(cell).replace(/"/g,'""');
+      return /[",\\n]/.test(s)?'"'+s+'"':s;
+    }).join(',');
+  }).join('\\n');
+
+  var blob=new Blob([csv],{type:'text/csv'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='FleetFolio-report-'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  showToast('📄 CSV exported!');
+}
+
+// ── Export PDF (print-based) ─────────────────────────
+function exportRevenuePDF(){
+  var rangeVal=(document.getElementById('rev-daterange')||{}).value||'all';
+  var bounds=getDateRangeBounds(rangeVal);
+  var fv=(document.getElementById('rev-filter')||{}).value||'all';
+  var vIds=fv==='all'?state.vehicles.map(function(v){ return v.id; }):[fv];
+  var vehiclesToShow=fv==='all'?state.vehicles:state.vehicles.filter(function(v){ return v.id===fv; });
+
+  var rangeLabel=document.getElementById('rev-daterange').options[document.getElementById('rev-daterange').selectedIndex].text;
+
+  var totalRev=0, totalExp=0;
+  var sections='';
+
+  vehiclesToShow.forEach(function(v){
+    var vTrips=state.revenue.filter(function(r){ return r.vehicleId===v.id && inDateRange(r.date,bounds); }).sort(function(a,b){ return new Date(a.date)-new Date(b.date); });
+    var vExpRecs=state.history.filter(function(h){ return h.vehicleId===v.id && inDateRange(h.date,bounds); }).sort(function(a,b){ return new Date(a.date)-new Date(b.date); });
+    var vRev=vTrips.reduce(function(a,r){ return a+(parseFloat(r.earnings)||0); },0);
+    var vExp=vExpRecs.reduce(function(a,h){ return a+(parseFloat(h.cost)||0); },0);
+    totalRev+=vRev; totalExp+=vExp;
+    if(!vTrips.length && !vExpRecs.length) return;
+
+    sections+='<h2 style="margin-top:28px;font-size:16px;border-bottom:2px solid #185FA5;padding-bottom:6px">'+esc(v.year+' '+v.make+' '+v.model)+(v.nickname?' — '+esc(v.nickname):'')+'</h2>';
+    sections+='<p style="font-size:13px;color:#555;margin:6px 0 12px"><strong>Revenue:</strong> $'+vRev.toFixed(2)+' &nbsp; | &nbsp; <strong>Expenses:</strong> $'+vExp.toFixed(2)+' &nbsp; | &nbsp; <strong>Net:</strong> $'+(vRev-vExp).toFixed(2)+'</p>';
+
+    if(vTrips.length){
+      sections+='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px"><tr style="background:#f0f0f0"><th style="text-align:left;padding:6px;border:1px solid #ddd">Date</th><th style="text-align:left;padding:6px;border:1px solid #ddd">Platform</th><th style="text-align:left;padding:6px;border:1px solid #ddd">Guest</th><th style="text-align:right;padding:6px;border:1px solid #ddd">Earnings</th></tr>';
+      vTrips.forEach(function(r){
+        sections+='<tr><td style="padding:6px;border:1px solid #ddd">'+r.date+'</td><td style="padding:6px;border:1px solid #ddd">'+esc(r.platform||'')+'</td><td style="padding:6px;border:1px solid #ddd">'+esc(r.guest||'')+'</td><td style="padding:6px;border:1px solid #ddd;text-align:right">$'+parseFloat(r.earnings).toFixed(2)+'</td></tr>';
+      });
+      sections+='</table>';
+    }
+    if(vExpRecs.length){
+      sections+='<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="background:#f0f0f0"><th style="text-align:left;padding:6px;border:1px solid #ddd">Date</th><th style="text-align:left;padding:6px;border:1px solid #ddd">Service</th><th style="text-align:left;padding:6px;border:1px solid #ddd">Shop</th><th style="text-align:right;padding:6px;border:1px solid #ddd">Cost</th></tr>';
+      vExpRecs.forEach(function(h){
+        sections+='<tr><td style="padding:6px;border:1px solid #ddd">'+h.date+'</td><td style="padding:6px;border:1px solid #ddd">'+esc(h.serviceName||'')+'</td><td style="padding:6px;border:1px solid #ddd">'+esc(h.shop||'')+'</td><td style="padding:6px;border:1px solid #ddd;text-align:right">$'+parseFloat(h.cost||0).toFixed(2)+'</td></tr>';
+      });
+      sections+='</table>';
+    }
+  });
+
+  var netTotal=totalRev-totalExp;
+  var reportHtml='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FleetFolio Report</title></head>'+
+    '<body style="font-family:Arial,sans-serif;color:#1a1a18;padding:2rem;max-width:800px;margin:0 auto">'+
+    '<h1 style="font-size:22px;margin-bottom:2px">🚗 FleetFolio — Profit & Loss Report</h1>'+
+    '<p style="color:#666;font-size:13px;margin-top:0">Period: '+rangeLabel+' &nbsp;·&nbsp; Generated '+new Date().toLocaleDateString()+'</p>'+
+    '<div style="background:#f5f5f3;border-radius:8px;padding:16px;margin:16px 0;display:flex;gap:24px;flex-wrap:wrap">'+
+    '<div><div style="font-size:11px;color:#888;text-transform:uppercase">Total Revenue</div><div style="font-size:22px;font-weight:700;color:#3B6D11">$'+totalRev.toFixed(2)+'</div></div>'+
+    '<div><div style="font-size:11px;color:#888;text-transform:uppercase">Total Expenses</div><div style="font-size:22px;font-weight:700;color:#A32D2D">$'+totalExp.toFixed(2)+'</div></div>'+
+    '<div><div style="font-size:11px;color:#888;text-transform:uppercase">Net Profit</div><div style="font-size:22px;font-weight:700;color:'+(netTotal>=0?'#3B6D11':'#A32D2D')+'">$'+netTotal.toFixed(2)+'</div></div>'+
+    '</div>'+
+    sections+
+    '<p style="margin-top:32px;font-size:11px;color:#999">Generated by FleetFolio</p>'+
+    '</body></html>';
+
+  var win=window.open('','_blank');
+  win.document.write(reportHtml);
+  win.document.close();
+  setTimeout(function(){ win.print(); }, 300);
 }
 
 function openLogRevenue(vehicleId){
