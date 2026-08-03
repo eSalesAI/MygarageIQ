@@ -124,23 +124,36 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
 .err-box{color:var(--red);font-size:13px;margin-top:.75rem;padding:.6rem .85rem;background:var(--red-bg);border-radius:var(--rs);display:none;}
 @media(max-width:600px){.summary-grid{grid-template-columns:repeat(2,1fr);}.topbar{padding:0 1rem;}}
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 
 <div id="setup-wrap" class="setup-wrap">
-  <div class="setup-card">
-    <div class="setup-logo">🔧</div>
-    <div class="setup-title">FleetFolio</div>
-    <div class="setup-sub">Connect your Firebase Realtime Database to sync across all devices.</div>
-    <div class="step"><div class="step-n">1</div><div class="step-t">Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → sign in → open your project.</div></div>
-    <div class="step"><div class="step-n">2</div><div class="step-t">Click <strong>Build → Realtime Database</strong>. Copy the URL at the top.</div></div>
-    <div class="step"><div class="step-n">3</div><div class="step-t">Paste it below:<div class="code-box">https://yourproject-default-rtdb.firebaseio.com</div></div></div>
-    <hr class="divider">
+  <div class="setup-card" style="max-width:400px">
+    <div class="setup-logo">🚗</div>
+    <div class="setup-title" id="auth-title">Sign in to FleetFolio</div>
+    <div class="setup-sub" id="auth-sub">Your fleet data is private to your account and syncs across all your devices.</div>
+
     <div class="form-group">
-      <label class="form-label">Firebase Database URL</label>
-      <input type="text" id="fb-url" placeholder="https://yourproject-default-rtdb.firebaseio.com" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+      <label class="form-label">Email</label>
+      <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email">
     </div>
-    <button onclick="connectDB()" style="width:100%;padding:12px;font-size:15px;font-weight:700;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);cursor:pointer;">Connect & Launch →</button>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" id="auth-password" placeholder="At least 6 characters" autocomplete="current-password">
+    </div>
+
+    <button id="auth-submit-btn" onclick="doSignIn()" style="width:100%;padding:12px;font-size:15px;font-weight:700;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);cursor:pointer;margin-top:.25rem">Sign In →</button>
+
+    <div style="text-align:center;margin-top:1rem;font-size:13px;color:var(--text2)">
+      <span id="auth-toggle-text">Don't have an account?</span>
+      <a href="#" onclick="toggleAuthMode();return false;" id="auth-toggle-link" style="color:var(--accent);font-weight:600;text-decoration:none">Sign up</a>
+    </div>
+    <div style="text-align:center;margin-top:.5rem">
+      <a href="#" onclick="doForgotPassword();return false;" style="font-size:12px;color:var(--text2);text-decoration:none">Forgot password?</a>
+    </div>
+
     <div class="err-box" id="setup-err"></div>
   </div>
 </div>
@@ -149,7 +162,8 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
   <div class="topbar">
     <div class="logo">🚗 FleetFolio &nbsp;<span id="sync-badge" class="synced">● Synced</span></div>
     <div class="topbar-right">
-      <button class="btn btn-sm btn-outline" onclick="disconnectDB()">⚙ Database</button>
+      <span id="user-email-badge" style="font-size:12px;color:var(--text2)"></span>
+      <button class="btn btn-sm btn-outline" onclick="doSignOut()">🚪 Sign out</button>
       <button class="add-btn" onclick="openAddVehicle()">+ Add vehicle</button>
     </div>
   </div>
@@ -243,32 +257,48 @@ var DB_URL = '';
 var state = { vehicles:[], history:[], revenue:[], tab:0, saving:false };
 
 // ── Firebase ──────────────────────────────────────────
+function dataPath(sub){ return 'users/'+UID+'/garageiq/'+sub; }
+
+function withToken(){
+  var user=firebase.auth().currentUser;
+  if(!user) return Promise.reject(new Error('Not signed in'));
+  return user.getIdToken();
+}
+
 function dbGet(path){
-  return fetch(DB_URL+'/'+path+'.json').then(function(r){ return r.json(); });
+  return withToken().then(function(token){
+    return fetch(DB_URL+'/'+path+'.json?auth='+token).then(function(r){ return r.json(); });
+  });
 }
 function dbSet(path,data){
-  return fetch(DB_URL+'/'+path+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  return withToken().then(function(token){
+    return fetch(DB_URL+'/'+path+'.json?auth='+token,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  });
 }
 function dbDel(path){
-  return fetch(DB_URL+'/'+path+'.json',{method:'DELETE'});
+  return withToken().then(function(token){
+    return fetch(DB_URL+'/'+path+'.json?auth='+token,{method:'DELETE'});
+  });
 }
-function dbSaveV(v){ setSaving(); dbSet('garageiq/vehicles/'+v.id,v).then(setSynced).catch(setSynced); }
-function dbDelV(id){ setSaving(); dbDel('garageiq/vehicles/'+id).then(setSynced).catch(setSynced); }
-function dbSaveH(r){ setSaving(); return dbSet('garageiq/history/'+r.id,r).then(setSynced).catch(setSynced); }
-function dbDelH(id){ setSaving(); dbDel('garageiq/history/'+id).then(setSynced).catch(setSynced); }
-function dbSaveR(r){ setSaving(); return dbSet('garageiq/revenue/'+r.id,r).then(setSynced).catch(setSynced); }
-function dbDelR(id){ setSaving(); dbDel('garageiq/revenue/'+id).then(setSynced).catch(setSynced); }
+function dbSaveV(v){ setSaving(); return dbSet(dataPath('vehicles/'+v.id),v).then(setSynced).catch(setSynced); }
+function dbDelV(id){ setSaving(); return dbDel(dataPath('vehicles/'+id)).then(setSynced).catch(setSynced); }
+function dbSaveH(r){ setSaving(); return dbSet(dataPath('history/'+r.id),r).then(setSynced).catch(setSynced); }
+function dbDelH(id){ setSaving(); return dbDel(dataPath('history/'+id)).then(setSynced).catch(setSynced); }
+function dbSaveR(r){ setSaving(); return dbSet(dataPath('revenue/'+r.id),r).then(setSynced).catch(setSynced); }
+function dbDelR(id){ setSaving(); return dbDel(dataPath('revenue/'+id)).then(setSynced).catch(setSynced); }
 
 function setSaving(){ state.saving=true; var b=document.getElementById('sync-badge'); if(b){b.className='saving';b.textContent='● Saving...';} }
 function setSynced(){ state.saving=false; var b=document.getElementById('sync-badge'); if(b){b.className='synced';b.textContent='● Synced';} }
 
+
 function loadFromDB(){
-  dbGet('garageiq').then(function(data){
+  dbGet(dataPath('')).then(function(data){
     if(data){
       state.vehicles = data.vehicles ? Object.values(data.vehicles) : [];
       state.history  = data.history  ? Object.values(data.history)  : [];
       state.revenue  = data.revenue  ? Object.values(data.revenue)  : [];
     }
+    checkForLegacyData();
     render();
     setSynced();
   }).catch(function(e){
@@ -277,7 +307,7 @@ function loadFromDB(){
   });
   setInterval(function(){
     if(state.saving) return;
-    dbGet('garageiq').then(function(data){
+    dbGet(dataPath('')).then(function(data){
       if(!data) return;
       state.vehicles = data.vehicles ? Object.values(data.vehicles) : [];
       state.history  = data.history  ? Object.values(data.history)  : [];
@@ -287,24 +317,57 @@ function loadFromDB(){
   }, 8000);
 }
 
-// ── Setup ─────────────────────────────────────────────
-function connectDB(){
-  var url = (document.getElementById('fb-url').value||'').trim().replace(/\/+$/,'');
-  var err = document.getElementById('setup-err');
-  err.style.display='none';
-  if(!url){ err.textContent='Please enter your Firebase URL.'; err.style.display='block'; return; }
-  if(url.indexOf('firebaseio')===-1){ err.textContent='URL should contain firebaseio.com'; err.style.display='block'; return; }
-  localStorage.setItem('giq_fb_url',url);
-  DB_URL=url;
-  document.getElementById('setup-wrap').style.display='none';
-  document.getElementById('main-app').style.display='block';
-  loadFromDB();
+// ── One-time migration from the old shared (pre-login) database ──
+function checkForLegacyData(){
+  var alreadyChecked=localStorage.getItem('ff_migration_checked_'+UID);
+  if(alreadyChecked) return;
+  if(state.vehicles.length>0) { localStorage.setItem('ff_migration_checked_'+UID,'1'); return; }
+
+  fetch(DB_URL+'/garageiq.json').then(function(r){ return r.json(); }).then(function(legacy){
+    if(!legacy || (!legacy.vehicles && !legacy.history && !legacy.revenue)){
+      localStorage.setItem('ff_migration_checked_'+UID,'1');
+      return;
+    }
+    var vCount=legacy.vehicles?Object.keys(legacy.vehicles).length:0;
+    var hCount=legacy.history?Object.keys(legacy.history).length:0;
+    var rCount=legacy.revenue?Object.keys(legacy.revenue).length:0;
+    if(vCount+hCount+rCount===0){ localStorage.setItem('ff_migration_checked_'+UID,'1'); return; }
+
+    showModal('<div class="modal-title">📦 Import your existing FleetFolio data?</div>'+
+      '<p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1rem">We found data from before accounts were added:</p>'+
+      '<ul style="font-size:13px;color:var(--text);margin:0 0 1rem 1.2rem;line-height:1.8">'+
+      '<li>'+vCount+' vehicle'+(vCount!==1?'s':'')+'</li>'+
+      '<li>'+hCount+' service record'+(hCount!==1?'s':'')+'</li>'+
+      '<li>'+rCount+' revenue trip'+(rCount!==1?'s':'')+'</li>'+
+      '</ul>'+
+      '<p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1rem">Import this into your private account? This only needs to be done once.</p>'+
+      '<div class="modal-actions"><button class="btn" onclick="skipMigration()">Skip</button><button class="btn btn-primary" onclick="runMigration()">Import my data</button></div>');
+
+    window._legacyData=legacy;
+  }).catch(function(){
+    localStorage.setItem('ff_migration_checked_'+UID,'1');
+  });
 }
-function disconnectDB(){
-  if(!confirm('Disconnect?')) return;
-  localStorage.removeItem('giq_fb_url');
-  location.reload();
+
+function skipMigration(){
+  localStorage.setItem('ff_migration_checked_'+UID,'1');
+  closeModal();
 }
+
+function runMigration(){
+  var legacy=window._legacyData;
+  if(!legacy){ closeModal(); return; }
+  showToast('Importing your data...');
+  dbSet(dataPath(''),legacy).then(function(){
+    localStorage.setItem('ff_migration_checked_'+UID,'1');
+    closeModal();
+    showToast('✅ Data imported! Reloading...');
+    setTimeout(function(){ location.reload(); }, 1200);
+  }).catch(function(e){
+    showToast('⚠️ Import failed: '+e.message);
+  });
+}
+
 
 // ── Toast ─────────────────────────────────────────────
 function showToast(msg){
@@ -1752,14 +1815,113 @@ function showModal(html){
 }
 function closeModal(){ document.getElementById('modal-container').innerHTML=''; }
 
-// ── Boot ──────────────────────────────────────────────
-// Firebase URL hardcoded — no setup screen needed
-var HARDCODED_URL = 'https://garageiq-a31e1-default-rtdb.firebaseio.com';
-DB_URL = localStorage.getItem('giq_fb_url') || HARDCODED_URL;
-localStorage.setItem('giq_fb_url', DB_URL);
-document.getElementById('setup-wrap').style.display='none';
-document.getElementById('main-app').style.display='block';
-loadFromDB();
+// ── Firebase Auth ─────────────────────────────────────
+var firebaseConfig = {
+  apiKey: "AIzaSyA00ppUwwwHysj3G340agJ6hROswRiZy-k",
+  authDomain: "garageiq-a31e1.firebaseapp.com",
+  databaseURL: "https://garageiq-a31e1-default-rtdb.firebaseio.com",
+  projectId: "garageiq-a31e1",
+  storageBucket: "garageiq-a31e1.firebasestorage.app",
+  messagingSenderId: "508476692301",
+  appId: "1:508476692301:web:2c40a3e1f57113d8f88904"
+};
+firebase.initializeApp(firebaseConfig);
+DB_URL = firebaseConfig.databaseURL;
+
+var UID = null;
+var authMode = 'signin'; // 'signin' or 'signup'
+
+function toggleAuthMode(){
+  authMode = (authMode==='signin') ? 'signup' : 'signin';
+  var title=document.getElementById('auth-title');
+  var sub=document.getElementById('auth-sub');
+  var btn=document.getElementById('auth-submit-btn');
+  var toggleText=document.getElementById('auth-toggle-text');
+  var toggleLink=document.getElementById('auth-toggle-link');
+  var err=document.getElementById('setup-err');
+  err.style.display='none';
+
+  if(authMode==='signup'){
+    title.textContent='Create your FleetFolio account';
+    sub.textContent='Your fleet data will be completely private to you.';
+    btn.textContent='Create Account →';
+    btn.setAttribute('onclick','doSignUp()');
+    toggleText.textContent='Already have an account?';
+    toggleLink.textContent='Sign in';
+  } else {
+    title.textContent='Sign in to FleetFolio';
+    sub.textContent='Your fleet data is private to your account and syncs across all your devices.';
+    btn.textContent='Sign In →';
+    btn.setAttribute('onclick','doSignIn()');
+    toggleText.textContent="Don't have an account?";
+    toggleLink.textContent='Sign up';
+  }
+}
+
+function authError(msg){
+  var friendly=msg;
+  if(msg.indexOf('auth/invalid-email')>=0) friendly='That email address looks invalid.';
+  else if(msg.indexOf('auth/user-not-found')>=0) friendly='No account found with that email.';
+  else if(msg.indexOf('auth/wrong-password')>=0) friendly='Incorrect password.';
+  else if(msg.indexOf('auth/invalid-credential')>=0) friendly='Incorrect email or password.';
+  else if(msg.indexOf('auth/email-already-in-use')>=0) friendly='An account with that email already exists — try signing in instead.';
+  else if(msg.indexOf('auth/weak-password')>=0) friendly='Password should be at least 6 characters.';
+  else if(msg.indexOf('auth/too-many-requests')>=0) friendly='Too many attempts. Please wait a moment and try again.';
+  var err=document.getElementById('setup-err');
+  err.textContent='⚠️ '+friendly;
+  err.style.display='block';
+}
+
+function doSignIn(){
+  var email=(document.getElementById('auth-email').value||'').trim();
+  var pass=document.getElementById('auth-password').value||'';
+  var err=document.getElementById('setup-err');
+  err.style.display='none';
+  if(!email||!pass){ authError('Please enter your email and password.'); return; }
+  firebase.auth().signInWithEmailAndPassword(email,pass).catch(function(e){ authError(e.message); });
+}
+
+function doSignUp(){
+  var email=(document.getElementById('auth-email').value||'').trim();
+  var pass=document.getElementById('auth-password').value||'';
+  var err=document.getElementById('setup-err');
+  err.style.display='none';
+  if(!email||!pass){ authError('Please enter an email and password.'); return; }
+  if(pass.length<6){ authError('Password should be at least 6 characters.'); return; }
+  firebase.auth().createUserWithEmailAndPassword(email,pass).catch(function(e){ authError(e.message); });
+}
+
+function doSignOut(){
+  if(!confirm('Sign out of FleetFolio?')) return;
+  firebase.auth().signOut().then(function(){ location.reload(); });
+}
+
+function doForgotPassword(){
+  var email=(document.getElementById('auth-email').value||'').trim();
+  if(!email){ authError('Enter your email above first, then click "Forgot password?" again.'); return; }
+  firebase.auth().sendPasswordResetEmail(email).then(function(){
+    var err=document.getElementById('setup-err');
+    err.style.color='var(--green)';
+    err.textContent='✅ Password reset email sent to '+email+'.';
+    err.style.display='block';
+  }).catch(function(e){ authError(e.message); });
+}
+
+firebase.auth().onAuthStateChanged(function(user){
+  if(user){
+    UID=user.uid;
+    document.getElementById('setup-wrap').style.display='none';
+    document.getElementById('main-app').style.display='block';
+    var badge=document.getElementById('user-email-badge');
+    if(badge) badge.textContent=user.email||'';
+    loadFromDB();
+  } else {
+    UID=null;
+    document.getElementById('main-app').style.display='none';
+    document.getElementById('setup-wrap').style.display='flex';
+  }
+});
+
 </script>
 </body>
 </html>
