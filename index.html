@@ -59,6 +59,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .badge-blue{background:var(--blue-bg);color:var(--blue);}
 .badge-purple{background:var(--purple-bg);color:var(--purple);}
 .badge-gray{background:var(--bg2);color:var(--text2);}
+.badge-purple2{background:var(--purple-bg);color:var(--purple);}
+.snooze-menu-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--rs);cursor:pointer;font-size:14px;transition:background .12s;}
+.snooze-menu-item:hover{background:var(--bg2);}
 .section-title{font-size:15px;font-weight:700;margin-bottom:.75rem;}
 .service-list{display:flex;flex-direction:column;gap:8px;}
 .service-item{background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:.8rem 1rem;display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;}
@@ -239,6 +242,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
             📥 Import Turo CSV(s)<input type="file" id="turo-csv" accept=".csv" multiple style="display:none" onchange="importTuroCSV(event)">
           </label>
           <button class="btn btn-sm btn-danger" onclick="clearImportedTrips()">🗑 Clear imported</button>
+          <button class="btn btn-sm btn-outline" onclick="manualSyncMileage()">🔢 Sync mileage</button>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn btn-sm btn-outline" onclick="exportRevenueCSV()">📄 Export CSV</button>
@@ -809,6 +813,16 @@ function getLastSvc(v,sid){
 }
 
 function getStatus(v,svc){
+  // Check for an active snooze on this service
+  var overrides=v.serviceOverrides||{};
+  var ov=overrides[svc.id];
+  if(ov && ov.snoozeUntil){
+    var today=new Date().toISOString().split('T')[0];
+    if(today < ov.snoozeUntil){
+      return {status:'snoozed',label:'Snoozed',pct:0,dueMile:null,milesOver:0,milesUntil:0,est:false,snoozeUntil:ov.snoozeUntil};
+    }
+  }
+
   var last=getLastSvc(v,svc.id);
   var intervalMi=svc.mi||svc.intervalMiles||0;
   var intervalMo=svc.mo||svc.intervalMonths||12;
@@ -944,6 +958,18 @@ function vcHTML(v){
 
 function svcRow(v,s,st){
   var ignored=(v.ignoredServices||[]).indexOf(s.id)>=0;
+
+  if(st.status==='snoozed'){
+    var wakeDate=new Date(st.snoozeUntil+'T00:00:00');
+    var wakeLabel=wakeDate.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    return '<div class="service-item" style="opacity:0.65">'+
+      '<div><div class="si-name">'+esc(s.name)+' <span style="font-size:12px;font-weight:400;color:var(--text2)">· '+esc(v.year+' '+v.make+' '+v.model)+'</span></div><div class="si-due">😴 Snoozed until '+wakeLabel+'</div></div>'+
+      '<span class="badge badge-purple2">Snoozed</span>'+
+      '<div style="display:flex;gap:4px">'+
+      '<button class="btn btn-sm btn-outline" onclick="clearSnooze(\''+v.id+'\',\''+s.id+'\')">Wake now</button>'+
+      '</div></div>';
+  }
+
   var bc=st.status==='overdue'?'badge-red':st.status==='due-soon'?'badge-amber':'badge-green';
   var fc=st.status==='overdue'?'#E24B4A':st.status==='due-soon'?'#BA7517':'#639922';
   var intervalMi=s.mi||s.intervalMiles||0;
@@ -974,6 +1000,7 @@ function svcRow(v,s,st){
     '<span class="badge '+bc+'">'+st.label+'</span>'+
     '<div style="display:flex;gap:4px">'+
     '<button class="btn btn-primary btn-sm" onclick="openLogService(\''+v.id+'\',\''+s.id+'\')">Log done</button>'+
+    '<button class="btn btn-sm btn-outline" style="font-size:11px" onclick="openSnoozeMenu(\''+v.id+'\',\''+s.id+'\')">⏰ Remind later</button>'+
     '<button class="btn btn-sm btn-outline" style="font-size:11px" onclick="toggleIgnore(\''+v.id+'\',\''+s.id+'\')">Ignore</button>'+
     '</div></div>';
 }
@@ -1002,7 +1029,8 @@ function renderSchedule(){
     // Sort: overdue first, then due-soon, then ok, ignored last
     // Within each group sort by pct descending (most urgent first)
     function urgencyScore(x){
-      if(x.ignored) return 4;
+      if(x.ignored) return 5;
+      if(x.st.status==='snoozed') return 4;
       if(x.st.status==='overdue') return 0;
       if(x.st.status==='due-soon') return 1;
       return 2;
@@ -1024,10 +1052,10 @@ function renderSchedule(){
     var igs=v.ignoredServices||[];
     var svcs=getSched(v.make,v.model).map(function(s){ return {s:s,st:getStatus(v,s)}; });
     svcs.sort(function(a,b){
-      var ai=igs.indexOf(a.s.id)>=0?1:0, bi=igs.indexOf(b.s.id)>=0?1:0;
+      var ai=igs.indexOf(a.s.id)>=0?2:0, bi=igs.indexOf(b.s.id)>=0?2:0;
       if(ai!==bi) return ai-bi;
-      var ua=a.st.status==='overdue'?0:a.st.status==='due-soon'?1:2;
-      var ub=b.st.status==='overdue'?0:b.st.status==='due-soon'?1:2;
+      function rank(st){ if(st.status==='overdue') return 0; if(st.status==='due-soon') return 1; if(st.status==='snoozed') return 3; return 2; }
+      var ua=rank(a.st), ub=rank(b.st);
       if(ua!==ub) return ua-ub;
       return b.st.pct-a.st.pct;
     });
@@ -1167,6 +1195,55 @@ function uploadPhoto(vehicleId){
     img.src=url;
   };
   inp.click();
+}
+
+function openSnoozeMenu(vehicleId,serviceId){
+  var v=state.vehicles.find(function(x){ return x.id===vehicleId; });
+  var svc=null;
+  getSched(v.make,v.model).forEach(function(s){ if(s.id===serviceId) svc=s; });
+  var svcName=svc?svc.name:'this service';
+
+  showModal('<div class="modal-title">⏰ Remind me later</div>'+
+    '<p style="font-size:13px;color:var(--text2);margin-bottom:1rem">Snooze <strong>'+esc(svcName)+'</strong> for '+esc(v.year+' '+v.make+' '+v.model)+'. It will disappear from alerts and reappear automatically when the snooze period ends.</p>'+
+    '<div class="snooze-menu-item" onclick="snoozeService(\''+vehicleId+'\',\''+serviceId+'\',7)">📅 <div>Snooze 1 week</div></div>'+
+    '<div class="snooze-menu-item" onclick="snoozeService(\''+vehicleId+'\',\''+serviceId+'\',14)">📅 <div>Snooze 2 weeks</div></div>'+
+    '<div class="snooze-menu-item" onclick="snoozeService(\''+vehicleId+'\',\''+serviceId+'\',30)">📅 <div>Snooze 1 month</div></div>'+
+    '<div class="snooze-menu-item" onclick="snoozeService(\''+vehicleId+'\',\''+serviceId+'\',90)">📅 <div>Snooze 3 months</div></div>'+
+    '<hr style="border:none;border-top:1px solid var(--border);margin:.75rem 0">'+
+    '<div class="form-group"><label class="form-label">Or pick a custom date</label><input type="date" id="snooze-custom-date" min="'+new Date().toISOString().split('T')[0]+'"></div>'+
+    '<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="snoozeServiceCustom(\''+vehicleId+'\',\''+serviceId+'\')">Set reminder</button></div>');
+}
+
+function snoozeService(vehicleId,serviceId,days){
+  var until=new Date(Date.now()+days*24*60*60*1000).toISOString().split('T')[0];
+  applySnooze(vehicleId,serviceId,until);
+}
+
+function snoozeServiceCustom(vehicleId,serviceId){
+  var date=document.getElementById('snooze-custom-date').value;
+  if(!date){ alert('Please pick a date.'); return; }
+  applySnooze(vehicleId,serviceId,date);
+}
+
+function applySnooze(vehicleId,serviceId,untilDate){
+  var v=state.vehicles.find(function(x){ return x.id===vehicleId; });
+  if(!v) return;
+  if(!v.serviceOverrides) v.serviceOverrides={};
+  v.serviceOverrides[serviceId]={snoozeUntil:untilDate};
+  closeModal();
+  render();
+  dbSaveV(v);
+  var d=new Date(untilDate+'T00:00:00');
+  showToast('⏰ Reminder set for '+d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+'.');
+}
+
+function clearSnooze(vehicleId,serviceId){
+  var v=state.vehicles.find(function(x){ return x.id===vehicleId; });
+  if(!v||!v.serviceOverrides) return;
+  delete v.serviceOverrides[serviceId];
+  render();
+  dbSaveV(v);
+  showToast('Reminder cleared.');
 }
 
 function toggleIgnore(vehicleId,serviceId){
@@ -1598,6 +1675,7 @@ function openLogRevenue(vehicleId){
     '<div class="form-group"><label class="form-label">Platform fee ($)</label><input id="rv-f" type="number" step="0.01" placeholder="0.00"></div></div>'+
     '<div class="form-row"><div class="form-group"><label class="form-label">Miles driven</label><input id="rv-m" type="number" placeholder="0"></div>'+
     '<div class="form-group"><label class="form-label">Guest name (optional)</label><input id="rv-g" placeholder="Guest name"></div></div>'+
+    '<div class="form-group"><label class="form-label">Odometer at drop-off (optional — updates vehicle mileage)</label><input id="rv-odo" type="number" placeholder="e.g. 52340"></div>'+
     '<div class="form-group"><label class="form-label">Notes</label><textarea id="rv-n" style="min-height:60px" placeholder="Any notes about this trip..."></textarea></div>'+
     '<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="logRevenue()">Save trip</button></div>');
 }
@@ -1607,6 +1685,7 @@ function logRevenue(){
   var earnings=parseFloat(document.getElementById('rv-e').value);
   var date=document.getElementById('rv-d').value;
   if(!date||isNaN(earnings)){ alert('Please fill in date and earnings.'); return; }
+  var odoVal=parseFloat(document.getElementById('rv-odo').value);
   var r={
     id:Date.now().toString(),
     vehicleId:vid,
@@ -1616,12 +1695,13 @@ function logRevenue(){
     earnings:earnings,
     platformFee:parseFloat(document.getElementById('rv-f').value)||0,
     miles:parseFloat(document.getElementById('rv-m').value)||0,
+    odometerOut:isNaN(odoVal)?null:odoVal,
     guest:document.getElementById('rv-g').value.trim()||null,
     notes:document.getElementById('rv-n').value.trim()||null
   };
   state.revenue.push(r);
   closeModal();
-  dbSaveR(r).then(function(){ render(); showToast('✅ Trip saved!'); }).catch(function(){ render(); showToast('✅ Trip saved!'); });
+  dbSaveR(r).then(function(){ render(); showToast('✅ Trip saved!'); syncMileageFromTrips(); }).catch(function(){ render(); showToast('✅ Trip saved!'); });
 }
 
 function editRevenue(id){
@@ -1636,6 +1716,7 @@ function editRevenue(id){
     '<div class="form-group"><label class="form-label">Platform fee ($)</label><input id="rv-f" type="number" step="0.01" value="'+(r.platformFee||'')+'"></div></div>'+
     '<div class="form-row"><div class="form-group"><label class="form-label">Miles driven</label><input id="rv-m" type="number" value="'+(r.miles||'')+'"></div>'+
     '<div class="form-group"><label class="form-label">Guest name</label><input id="rv-g" value="'+esc(r.guest||'')+'"></div></div>'+
+    '<div class="form-group"><label class="form-label">Odometer at drop-off (optional)</label><input id="rv-odo" type="number" value="'+(r.odometerOut!=null?r.odometerOut:'')+'"></div>'+
     '<div class="form-group"><label class="form-label">Notes</label><textarea id="rv-n" style="min-height:60px">'+esc(r.notes||'')+'</textarea></div>'+
     '<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveEditRevenue(\''+id+'\')">Save changes</button></div>');
 }
@@ -1643,6 +1724,7 @@ function editRevenue(id){
 function saveEditRevenue(id){
   var r=state.revenue.find(function(x){ return x.id===id; });
   if(!r) return;
+  var odoVal=parseFloat(document.getElementById('rv-odo').value);
   r.vehicleId=document.getElementById('rv-v').value;
   r.platform=document.getElementById('rv-p').value;
   r.date=document.getElementById('rv-d').value;
@@ -1650,10 +1732,12 @@ function saveEditRevenue(id){
   r.earnings=parseFloat(document.getElementById('rv-e').value)||0;
   r.platformFee=parseFloat(document.getElementById('rv-f').value)||0;
   r.miles=parseFloat(document.getElementById('rv-m').value)||0;
+  r.odometerOut=isNaN(odoVal)?null:odoVal;
   r.guest=document.getElementById('rv-g').value.trim()||null;
   r.notes=document.getElementById('rv-n').value.trim()||null;
   closeModal(); renderRevenue();
   dbSaveR(r); showToast('✅ Trip updated!');
+  syncMileageFromTrips();
 }
 
 function deleteRevenue(id){
@@ -1706,6 +1790,35 @@ function parseCSVFile(file){
     };
     reader.readAsText(file);
   });
+}
+
+function manualSyncMileage(){
+  var updated=syncMileageFromTrips();
+  if(!updated.length) showToast('✅ Mileage already up to date with trip data.');
+}
+
+function syncMileageFromTrips(){
+  var updated=[];
+  state.vehicles.forEach(function(v){
+    var trips=state.revenue.filter(function(r){ return r.vehicleId===v.id && r.odometerOut!=null && !isNaN(r.odometerOut); });
+    if(!trips.length) return;
+    trips.sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+    var latestOdometer=trips[0].odometerOut;
+    if(latestOdometer > v.mileage){
+      var oldMileage=v.mileage;
+      v.mileage=Math.round(latestOdometer);
+      dbSaveV(v);
+      updated.push({vehicle:v,oldMileage:oldMileage,newMileage:v.mileage});
+    }
+  });
+  if(updated.length){
+    renderDashboard();
+    var msg='🔢 Updated mileage from Turo trip data: '+updated.map(function(u){
+      return u.vehicle.make+' '+u.vehicle.model+' ('+u.oldMileage.toLocaleString()+' → '+u.newMileage.toLocaleString()+')';
+    }).join(', ');
+    setTimeout(function(){ showToast(msg); }, 1500);
+  }
+  return updated;
 }
 
 function importTuroCSV(event){
@@ -1764,6 +1877,8 @@ function importTuroCSV(event){
         var guest=row['guest']||row['renter']||row['renter name']||'';
         var days=parseInt(row['trip days']||row['trip length']||row['days']||'1')||1;
         var status=(row['trip status']||'').toLowerCase();
+        var odometerOut=parseFloat((row['check-out odometer']||row['checkout odometer']||row['check out odometer']||row['odometer out']||'').replace(/[,\s]/g,''));
+        if(isNaN(odometerOut)) odometerOut=null;
 
         // Skip cancelled trips (they have $0 earnings anyway) and rows with no valid earnings
         if(!date||isNaN(earnings)||earnings<=0){ skippedBad++; return; }
@@ -1786,6 +1901,7 @@ function importTuroCSV(event){
           earnings:earnings,
           platformFee:fee,
           miles:miles||0,
+          odometerOut:odometerOut,
           guest:guest||null,
           notes:(matchedVehicle?'':'⚠️ Could not auto-match vehicle — please assign manually. ')+'Imported from Turo CSV ('+result.file+')'
         };
@@ -1805,6 +1921,7 @@ function importTuroCSV(event){
         showToast('⚠️ '+ambiguous+' trip'+(ambiguous!==1?'s':'')+' could not be matched to a specific vehicle (duplicate models). Edit them in the list below to assign the right car. Tip: add each car\'s VIN under Edit vehicle to fix this automatically next time.');
       }, 3000);
     }
+    syncMileageFromTrips();
   });
 
   event.target.value='';
