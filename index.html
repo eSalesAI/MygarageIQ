@@ -62,6 +62,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .badge-purple2{background:var(--purple-bg);color:var(--purple);}
 .snooze-menu-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--rs);cursor:pointer;font-size:14px;transition:background .12s;}
 .snooze-menu-item:hover{background:var(--bg2);}
+.spinner-icon{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-right:6px;vertical-align:middle;}
+.spinner-icon-dark{border:2px solid var(--border2);border-top-color:var(--accent);}
+@keyframes spin{to{transform:rotate(360deg);}}
+.import-progress-banner{background:var(--blue-bg);border:1px solid rgba(24,95,165,.3);border-radius:var(--r);padding:.85rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--blue);}
 .section-title{font-size:15px;font-weight:700;margin-bottom:.75rem;}
 .service-list{display:flex;flex-direction:column;gap:8px;}
 .service-item{background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:.8rem 1rem;display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;}
@@ -250,6 +254,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
           <button class="add-btn" onclick="openLogRevenue(null)">+ Log trip</button>
         </div>
       </div>
+      <div id="import-progress-banner" style="display:none"></div>
       <div class="summary-grid" id="rev-summary"></div>
       <div id="revenue-list"></div>
     </div>
@@ -1821,13 +1826,37 @@ function syncMileageFromTrips(){
   return updated;
 }
 
+function showImportProgress(msg){
+  var banner=document.getElementById('import-progress-banner');
+  if(!banner) return;
+  banner.style.display='flex';
+  banner.className='import-progress-banner';
+  banner.innerHTML='<span class="spinner-icon spinner-icon-dark"></span>'+esc(msg);
+}
+function hideImportProgress(){
+  var banner=document.getElementById('import-progress-banner');
+  if(banner) banner.style.display='none';
+}
+
 function importTuroCSV(event){
   var files=Array.prototype.slice.call(event.target.files);
   if(!files.length) return;
 
-  showToast('Reading '+files.length+' file'+(files.length>1?'s':'')+'...');
+  // Switch to Revenue tab so the progress banner is actually visible
+  if(state.tab!==3){
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+    document.getElementById('tab3').classList.add('active');
+    document.querySelectorAll('[id^="view-"]').forEach(function(v){v.style.display='none';});
+    document.getElementById('view-revenue').style.display='block';
+    state.tab=3;
+  }
+
+  showImportProgress('Reading '+files.length+' file'+(files.length>1?'s':'')+'…');
 
   Promise.all(files.map(parseCSVFile)).then(function(results){
+    var totalRows=results.reduce(function(a,r){ return a+r.rows.length; },0);
+    showImportProgress('Processing '+totalRows.toLocaleString()+' trip row'+(totalRows!==1?'s':'')+' from '+files.length+' file'+(files.length>1?'s':'')+'…');
+
     var imported=0, skippedDupe=0, skippedBad=0;
 
     var ambiguous=0;
@@ -1911,11 +1940,16 @@ function importTuroCSV(event){
       });
     });
 
+    hideImportProgress();
     renderRevenue();
     var msg='✅ Imported '+imported+' trip'+(imported!==1?'s':'')+' from '+files.length+' file'+(files.length>1?'s':'')+'.';
     if(skippedDupe) msg+=' Skipped '+skippedDupe+' duplicate'+(skippedDupe!==1?'s':'')+'.';
     if(skippedBad) msg+=' Skipped '+skippedBad+' invalid row'+(skippedBad!==1?'s':'')+'.';
     showToast(msg);
+    if(imported===0 && skippedDupe===0){
+      showImportProgress('⚠️ No usable rows found — check that this is a valid Turo trip export CSV.');
+      setTimeout(hideImportProgress, 6000);
+    }
     if(ambiguous>0){
       setTimeout(function(){
         showToast('⚠️ '+ambiguous+' trip'+(ambiguous!==1?'s':'')+' could not be matched to a specific vehicle (duplicate models). Edit them in the list below to assign the right car. Tip: add each car\'s VIN under Edit vehicle to fix this automatically next time.');
