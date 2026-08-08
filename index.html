@@ -66,6 +66,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .spinner-icon-dark{border:2px solid var(--border2);border-top-color:var(--accent);}
 @keyframes spin{to{transform:rotate(360deg);}}
 .import-progress-banner{background:var(--blue-bg);border:1px solid rgba(24,95,165,.3);border-radius:var(--r);padding:.85rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--blue);}
+.svc-info-panel{grid-column:1/-1;margin-top:10px;padding-top:12px;border-top:1px solid var(--border);font-size:13px;line-height:1.6;}
+.svc-info-section{margin-bottom:10px;}
+.svc-info-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);margin-bottom:3px;}
+.svc-info-why{color:var(--text);}
+.svc-info-consequence{color:var(--red);background:var(--red-bg);padding:8px 10px;border-radius:var(--rs);font-size:12px;}
+.svc-signs-list{margin:0;padding-left:1.1rem;color:var(--text);}
+.svc-signs-list li{margin-bottom:2px;}
+.svc-part-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.svc-part-row:last-child{border-bottom:none;}
+.svc-shop-links{display:flex;gap:6px;flex-shrink:0;}
+.svc-shop-btn{font-size:11px;padding:4px 9px;border-radius:99px;border:1px solid var(--border2);background:var(--bg);color:var(--text2);text-decoration:none;white-space:nowrap;}
+.svc-shop-btn:hover{background:var(--bg2);}
 .section-title{font-size:15px;font-weight:700;margin-bottom:.75rem;}
 .service-list{display:flex;flex-direction:column;gap:8px;}
 .service-item{background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:.8rem 1rem;display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;}
@@ -262,6 +274,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5;}
 <div class="toast" id="toast"></div>
 
 <script>
+
 var DB_URL = '';
 var state = { vehicles:[], history:[], revenue:[], tab:0, saving:false };
 
@@ -775,10 +788,245 @@ var S={
   ]
 };
 
+// ── Service education & parts library ─────────────────
+// Generic per service-type (applies regardless of which vehicle/brand)
+var SERVICE_INFO = {
+  oil:{
+    why:'Engine oil lubricates moving parts and carries away heat. Old oil breaks down, loses lubrication, and lets metal-on-metal contact wear down your engine over time.',
+    signs:['Oil looks dark/gritty on the dipstick','Engine runs louder than usual','"Change oil" light on dashboard','Burning smell when engine is warm'],
+    consequence:'Skipping oil changes causes accelerated engine wear, sludge buildup, and in severe cases complete engine failure — a $4,000+ repair vs. a $50 oil change.',
+    parts:['Engine oil (check manual for weight/spec)','Oil filter','Drain plug washer (if crush-type)'],
+    tools:['Oil filter wrench','Drain pan','Jack and jack stands or ramps','Funnel']
+  },
+  tires:{
+    why:'Rotating tires evens out tread wear across all four, since front and rear tires wear differently based on drive type, alignment, and load.',
+    signs:['Uneven tread wear (more on inside/outside edge)','Vibration at highway speed','Noisy tires'],
+    consequence:'Skipping rotations shortens tire life significantly and can cause premature replacement — tires cost $150-300 each.',
+    parts:[],
+    tools:['Jack and jack stands','Lug wrench or impact wrench','Torque wrench']
+  },
+  air_filter:{
+    why:'The engine air filter keeps dirt and debris out of the combustion chamber. A clogged filter restricts airflow, hurting performance and fuel economy.',
+    signs:['Reduced acceleration','Lower gas mileage','Visibly dirty/dark filter','Unusual engine sounds'],
+    consequence:'A severely clogged filter can starve the engine of air, causing poor combustion, black exhaust smoke, and long-term buildup on internal components.',
+    parts:['Engine air filter (specific to your vehicle)'],
+    tools:['Screwdriver (sometimes needed for the airbox clips)']
+  },
+  cabin_filter:{
+    why:'The cabin filter cleans the air blown through your vents. It traps dust, pollen, and exhaust particles before they reach you.',
+    signs:['Musty smell from vents','Weak airflow from A/C or heater','Excess dust inside the cabin'],
+    consequence:'A clogged cabin filter reduces HVAC airflow and can grow mold/bacteria, which is especially relevant with frequent renters using the vehicle.',
+    parts:['Cabin air filter (specific to your vehicle)'],
+    tools:['None — usually a tool-free glovebox or under-dash swap']
+  },
+  brakes:{
+    why:'Brake pads wear down with use and eventually stop gripping the rotor effectively. Regular inspection catches thin pads before they damage rotors or fail.',
+    signs:['Squealing or grinding noise when braking','Longer stopping distance','Vibration when braking','Brake warning light'],
+    consequence:'Ignoring worn brakes leads to rotor damage (much more expensive to replace) and, in the worst case, brake failure — a serious safety risk, especially with renters unfamiliar with the car.',
+    parts:['Brake pads (front and/or rear)','Rotors (if worn/scored)','Brake hardware kit (clips, shims)'],
+    tools:['Jack and jack stands','Lug wrench','C-clamp or brake caliper tool','Torque wrench']
+  },
+  spark_plugs:{
+    why:'Spark plugs ignite the air/fuel mixture in each cylinder. Worn plugs cause misfires, poor fuel economy, and rough idling.',
+    signs:['Engine misfires or hesitates','Rough idle','Poor fuel economy','Check engine light'],
+    consequence:'Old spark plugs can cause unburned fuel to damage the catalytic converter — a repair that can cost $1,000-2,500, far more than a plug replacement.',
+    parts:['Spark plugs (correct heat range for your engine)','Ignition coil boots (if cracked)'],
+    tools:['Spark plug socket + ratchet','Gap gauge','Anti-seize compound (some engines)','Torque wrench']
+  },
+  coolant:{
+    why:'Coolant (antifreeze) keeps your engine from overheating and prevents freezing in cold weather. Over time it loses its protective additives.',
+    signs:['Temperature gauge running higher than normal','Sweet smell from the engine bay','Visible coolant leaks','Low coolant warning light'],
+    consequence:'Old or low coolant leads to overheating, which can warp the cylinder head or blow a head gasket — a repair costing $1,500+ versus a routine flush.',
+    parts:['Coolant/antifreeze (correct type for your vehicle — do not mix types)','Distilled water (for mixing if using concentrate)'],
+    tools:['Drain pan','Funnel','Pliers (for hose clamps if flushing manually)']
+  },
+  transmission:{
+    why:'Transmission fluid lubricates and cools internal gears and clutches. Degraded fluid causes rough shifting and accelerated wear.',
+    signs:['Delayed or rough gear shifts','Slipping between gears','Burning smell','Fluid appears dark brown/black instead of red'],
+    consequence:'Neglected transmission fluid is one of the leading causes of transmission failure — a rebuild or replacement can cost $2,000-5,000+.',
+    parts:['Transmission fluid (exact spec for your transmission — critical, wrong fluid can cause damage)','Transmission filter (if applicable)','Pan gasket (if drop-pan service)'],
+    tools:['Jack and jack stands','Drain pan','Torque wrench','Fluid pump (for some fill methods)']
+  },
+  brake_fluid:{
+    why:'Brake fluid is hygroscopic — it absorbs moisture over time, which lowers its boiling point and can introduce corrosion into the brake lines.',
+    signs:['Spongy or soft brake pedal','Fluid appears dark/murky in the reservoir','ABS warning light'],
+    consequence:'Moisture-contaminated brake fluid can boil under hard braking, causing a sudden loss of braking power — a serious safety issue.',
+    parts:['Brake fluid (correct DOT rating — check your manual)'],
+    tools:['Brake bleeder kit','Turkey baster or fluid extractor','Wrench for bleeder valves']
+  },
+  timing_belt:{
+    why:'The timing belt keeps the engine\'s valves and pistons moving in sync. On interference engines, a snapped belt causes catastrophic internal damage.',
+    signs:['Ticking noise from the engine (early warning)','Engine won\'t start','Visible cracking on the belt if inspected'],
+    consequence:'A broken timing belt on an interference engine destroys valves and pistons instantly — often a full engine replacement costing $3,000-6,000+.',
+    parts:['Timing belt kit (belt, tensioner, idler pulleys)','Water pump (commonly replaced at the same time)'],
+    tools:['This is a major job — professional service strongly recommended','Engine timing marks/manual required']
+  },
+  battery:{
+    why:'Car batteries degrade over years of heat cycling and use. A weak battery can leave a renter stranded, and it also strains the alternator.',
+    signs:['Slow engine crank when starting','Dashboard lights dim when starting','Battery warning light','Battery over 3-4 years old'],
+    consequence:'A dead battery mid-rental is a bad guest experience and can trigger a support ticket or refund request on Turo — cheap to prevent, costly in reviews.',
+    parts:['Replacement battery (correct group size/CCA for your vehicle)'],
+    tools:['Wrench set (for terminal clamps)','Battery terminal cleaner brush','Memory saver (to preserve radio/settings presets)']
+  },
+  wiper_blades:{
+    why:'Wiper blades degrade from UV exposure and repeated use, leaving streaks that reduce visibility in rain.',
+    signs:['Streaking or skipping on the windshield','Squeaking noise','Visible cracking in the rubber'],
+    consequence:'Poor visibility in rain is a safety risk, especially for renters unfamiliar with the car in bad weather.',
+    parts:['Wiper blades (correct size — often different front/rear)'],
+    tools:['None — snap-in replacement, no tools typically needed']
+  },
+  inspect_belts:{
+    why:'The serpentine/accessory belt drives the alternator, power steering, and A/C compressor. A worn belt can snap without warning.',
+    signs:['Squealing noise on startup or under load','Visible cracks or fraying','Loss of power steering or A/C suddenly'],
+    consequence:'A snapped belt mid-drive can cause immediate loss of power steering and battery charging — dangerous for a renter on the road.',
+    parts:['Serpentine belt (correct length/rib count)','Belt tensioner (if worn)'],
+    tools:['Belt tension tool or ratchet','Serpentine belt routing diagram']
+  },
+  differential:{
+    why:'Differential fluid lubricates the gears that let your wheels turn at different speeds, especially important on AWD/4WD vehicles.',
+    signs:['Whining or grinding noise while turning','Vibration','Difficulty turning corners smoothly'],
+    consequence:'Neglected differential fluid leads to gear wear and eventual differential failure, which is an expensive drivetrain repair.',
+    parts:['Differential/gear oil (correct spec — often different front vs rear)'],
+    tools:['Jack and jack stands','Drain pan','Hex bit or wrench for fill/drain plugs']
+  },
+  multiair:{
+    why:'MultiAir is Fiat\'s variable valve timing system, unique to certain engines. The actuator controls valve lift electronically and needs periodic service.',
+    signs:['Rough idle','Reduced power','Check engine light with valve-timing-related codes'],
+    consequence:'A failing MultiAir actuator can cause poor performance and, if ignored, more extensive engine work.',
+    parts:['MultiAir actuator oil/fluid (specific to system)'],
+    tools:['Best handled by a shop familiar with MultiAir engines']
+  },
+  clutch:{
+    why:'On manual transmissions, the clutch wears with every gear change. Since renters may not be gentle with an unfamiliar manual car, wear can accelerate.',
+    signs:['Clutch pedal feels different (higher or spongy)','Slipping (RPM rises without matching acceleration)','Burning smell when engaging'],
+    consequence:'A worn clutch that fails mid-rental leaves the car undriveable — a costly tow and lost booking.',
+    parts:['Clutch kit (disc, pressure plate, throw-out bearing)','Flywheel resurfacing or replacement (if needed)'],
+    tools:['This is a major job — professional service strongly recommended']
+  },
+  transfer_case:{
+    why:'The transfer case fluid lubricates the components that send power to both axles on 4WD/AWD vehicles.',
+    signs:['Grinding or whining noise when switching drive modes','Difficulty engaging 4WD','Leaking fluid under the vehicle'],
+    consequence:'Low or degraded transfer case fluid can cause premature wear and costly drivetrain repairs.',
+    parts:['Transfer case fluid (correct spec for your model)'],
+    tools:['Jack and jack stands','Drain pan','Hex bit or wrench for fill/drain plugs']
+  },
+  alignment:{
+    why:'Wheel alignment ensures all four tires point in the correct direction for even wear and predictable handling.',
+    signs:['Car pulls to one side','Steering wheel off-center when driving straight','Uneven tire wear'],
+    consequence:'Poor alignment accelerates tire wear (an expensive recurring cost) and can make the car feel unsafe to renters.',
+    parts:[],
+    tools:['Professional alignment rack required — not a DIY job']
+  },
+  ac_service:{
+    why:'The A/C system loses a small amount of refrigerant over time through microscopic seal permeation, reducing cooling performance.',
+    signs:['Weak or warm airflow from vents','Longer time to cool the cabin','Unusual smell from vents'],
+    consequence:'A/C that doesn\'t work is a common complaint from renters, especially in hot climates, and can trigger refund requests.',
+    parts:['Refrigerant (correct type — R134a or R1234yf depending on vehicle)','A/C system dye (for leak detection)'],
+    tools:['A/C manifold gauge set','Vacuum pump (for full recharge)']
+  },
+  battery_coolant:{
+    why:'EV battery packs use a separate coolant loop to keep the battery cells at an optimal temperature for performance and longevity.',
+    signs:['Reduced range','Battery temperature warnings on the dash','Slower DC fast-charging speeds'],
+    consequence:'Neglecting battery coolant can accelerate battery degradation, which is very costly to address on an EV.',
+    parts:['EV battery coolant (manufacturer-specific — do not substitute)'],
+    tools:['Specialized EV service equipment — professional service required']
+  },
+  battery_check:{
+    why:'The high-voltage battery pack is the most expensive component on an EV. Periodic health checks track degradation and catch issues early.',
+    signs:['Noticeably reduced range compared to when new','Slower charging','Battery warning lights'],
+    consequence:'Catching early-stage battery issues can sometimes be addressed under warranty; ignoring warning signs can lead to full pack replacement, which is very expensive.',
+    parts:[],
+    tools:['Manufacturer diagnostic scan tool — dealer or EV specialist required']
+  },
+  hybrid_battery:{
+    why:'The hybrid battery pack assists the engine and enables electric-only driving. Like all batteries, it degrades gradually with age and heat cycling.',
+    signs:['Reduced fuel economy','Engine running more often than usual','Hybrid system warning light'],
+    consequence:'A failing hybrid battery reduces fuel savings and can eventually trigger a costly pack replacement or reconditioning.',
+    parts:[],
+    tools:['Manufacturer diagnostic scan tool — dealer or hybrid specialist required']
+  },
+  inverter_coolant:{
+    why:'The inverter converts DC battery power to AC for the electric motor, and generates heat that a dedicated coolant loop manages.',
+    signs:['Reduced hybrid system performance','Warning lights related to the hybrid/electric system'],
+    consequence:'Overheating the inverter can damage expensive power electronics — a repair far costlier than a coolant service.',
+    parts:['Inverter coolant (manufacturer-specific)'],
+    tools:['Professional service recommended — specialized hybrid system']
+  },
+  tire_pressure:{
+    why:'Tires lose roughly 1 PSI per month naturally, and renters may not notice a slow leak. Correct pressure affects handling, fuel economy, and tread wear.',
+    signs:['Visibly low tire in photos before/after a trip','TPMS warning light','Uneven wear developing'],
+    consequence:'Underinflated tires wear unevenly, reduce fuel economy, and increase blowout risk — especially relevant checking between every renter.',
+    parts:[],
+    tools:['Tire pressure gauge','Portable air compressor']
+  },
+  interior_detail:{
+    why:'Between-renter cleaning protects your listing rating and catches damage (stains, odors, missing items) before the next guest, so you can document and charge appropriately.',
+    signs:['Visible stains, crumbs, or odor','Renter complaints about cleanliness','Missing items (chargers, manuals)'],
+    consequence:'Skipping detail checks between renters risks bad reviews and makes it harder to prove pre-existing damage claims.',
+    parts:['Interior cleaner/wipes','Odor eliminator spray'],
+    tools:['Vacuum','Microfiber cloths']
+  },
+  key_fob_battery:{
+    why:'Key fob batteries typically last 1-2 years. A dying fob can cause intermittent lock/unlock or start issues that confuse renters.',
+    signs:['Fob range seems shorter than before','Have to press the button multiple times','Low battery warning on dash (some vehicles)'],
+    consequence:'A dead fob mid-rental can strand a renter or trigger a support request — a $5 battery prevents this entirely.',
+    parts:['CR2032 or CR2025 coin battery (check your specific fob)'],
+    tools:['Small flathead screwdriver']
+  },
+  lights_check:{
+    why:'Headlights, taillights, and turn signals are safety-critical and also affect how the car is perceived by renters and other drivers.',
+    signs:['Bulb noticeably dimmer than the other side','Bulb out warning light','Renter feedback about visibility'],
+    consequence:'A burnt-out light is an easy way to get pulled over, which is a bad experience for a renter and reflects on your listing.',
+    parts:['Replacement bulb (correct type for your vehicle — halogen, LED, or HID)'],
+    tools:['Screwdriver (some housings require access panel removal)']
+  },
+  floor_mats:{
+    why:'Floor mats and seats take the brunt of wear from frequent renters — checking condition regularly helps you catch and address damage before it compounds.',
+    signs:['Visible staining or excessive wear','Torn or missing mats','Odors absorbed into fabric'],
+    consequence:'Worn interior condition directly affects your Turo rating and can reduce what renters are willing to pay for future bookings.',
+    parts:['Replacement floor mats (if worn)','Seat protector/covers (optional)'],
+    tools:['None typically needed']
+  },
+  ac_performance:{
+    why:'A quick functional check confirms the A/C is blowing cold before your next renter picks up the car, especially important in hot months.',
+    signs:['Air not getting as cold as expected','Weak airflow','Unusual noise when A/C is on'],
+    consequence:'A/C failure is one of the most common renter complaints in warm climates and can lead to a refund or bad review.',
+    parts:[],
+    tools:['Thermometer (optional, to verify vent temperature)']
+  },
+  jump_battery_terminals:{
+    why:'Corrosion on battery terminals creates resistance that can cause hard starts or a no-start, even with a healthy battery.',
+    signs:['White/greenish buildup on terminals','Slow or hesitant engine crank','Electrical gremlins (radio resets, etc.)'],
+    consequence:'Corroded terminals can leave a renter stranded even though the battery itself is fine — a preventable and cheap fix.',
+    parts:['Battery terminal protector spray/felt washers'],
+    tools:['Wire brush or terminal cleaning tool','Wrench for terminal clamps']
+  }
+};
+
+// ── Universal rental-fleet checks (added to every vehicle) ──
+var UNIVERSAL_RENTAL_CHECKS = [
+  {id:'tire_pressure',name:'Tire pressure & tread check',mi:3000,mo:3,note:'Quick check between renters'},
+  {id:'interior_detail',name:'Interior detail & inspection',mi:5000,mo:3,note:'Between-renter cleaning & damage check'},
+  {id:'key_fob_battery',name:'Key fob battery check',mi:0,mo:12},
+  {id:'lights_check',name:'Headlight/taillight/signal check',mi:6000,mo:6},
+  {id:'floor_mats',name:'Floor mat & seat condition check',mi:5000,mo:3},
+  {id:'ac_performance',name:'A/C performance check',mi:0,mo:6},
+  {id:'jump_battery_terminals',name:'Battery terminal clean & inspect',mi:10000,mo:12}
+];
+
+function shopSearchLinks(vehicle, partQuery){
+  var q=encodeURIComponent(vehicle.year+' '+vehicle.make+' '+vehicle.model+' '+partQuery);
+  return {
+    amazon:'https://www.amazon.com/s?k='+q,
+    ebay:'https://www.ebay.com/sch/i.html?_nkw='+q
+  };
+}
+
+
 var MAKES=['Acura','Audi','BMW','Buick','Cadillac','Chevrolet','Chrysler','Dodge','Fiat','Ford','Genesis','GMC','Honda','Hyundai','Infiniti','Jeep','Kia','Lexus','Lincoln','Mazda','Mercedes-Benz','Mitsubishi','Nissan','Ram','Subaru','Tesla','Toyota','Volkswagen','Volvo'];
 var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-function getSched(make,model){
+function getSchedBase(make,model){
   var mk=(make||'').toLowerCase();
   var mo=(model||'').toLowerCase();
   var evList=['model 3','model y','model s','model x','cybertruck','leaf','ioniq 5','ioniq 6','ev6','ev9','mach-e','lightning','bolt','i4','ix','i3','id.4','id4','eqs','eqb','eqc','taycan'];
@@ -808,6 +1056,14 @@ function getSched(make,model){
   if(mk.indexOf('lincoln')>=0) return S.ford;
   if(mk.indexOf('genesis')>=0) return S.hyundai;
   return S.default;
+}
+
+function getSched(make,model){
+  var base=getSchedBase(make,model);
+  var baseIds={};
+  base.forEach(function(s){ baseIds[s.id]=true; });
+  var extras=UNIVERSAL_RENTAL_CHECKS.filter(function(u){ return !baseIds[u.id]; });
+  return base.concat(extras);
 }
 
 // ── Status calculation ────────────────────────────────
@@ -961,8 +1217,58 @@ function vcHTML(v){
     '</div></div></div>';
 }
 
+function toggleSvcInfo(vehicleId,serviceId){
+  if(!state.svcInfoExpanded) state.svcInfoExpanded={};
+  var key=vehicleId+'_'+serviceId;
+  state.svcInfoExpanded[key]=!state.svcInfoExpanded[key];
+  render();
+}
+
+function buildSvcInfoPanel(v,s){
+  var info=SERVICE_INFO[s.id];
+  if(!info) return '';
+  var html='<div class="svc-info-panel">';
+
+  html+='<div class="svc-info-section"><div class="svc-info-label">Why it matters</div><div class="svc-info-why">'+esc(info.why)+'</div></div>';
+
+  if(info.signs && info.signs.length){
+    html+='<div class="svc-info-section"><div class="svc-info-label">Warning signs to watch for</div><ul class="svc-signs-list">'+
+      info.signs.map(function(sign){ return '<li>'+esc(sign)+'</li>'; }).join('')+
+      '</ul></div>';
+  }
+
+  if(info.consequence){
+    html+='<div class="svc-info-section"><div class="svc-info-label">If left unaddressed</div><div class="svc-info-consequence">⚠️ '+esc(info.consequence)+'</div></div>';
+  }
+
+  if(info.parts && info.parts.length){
+    html+='<div class="svc-info-section"><div class="svc-info-label">Parts needed</div>';
+    info.parts.forEach(function(part){
+      var links=shopSearchLinks(v,part);
+      html+='<div class="svc-part-row"><span>'+esc(part)+'</span><div class="svc-shop-links">'+
+        '<a class="svc-shop-btn" href="'+links.amazon+'" target="_blank" rel="noopener">🛒 Amazon</a>'+
+        '<a class="svc-shop-btn" href="'+links.ebay+'" target="_blank" rel="noopener">🛒 eBay</a>'+
+        '</div></div>';
+    });
+    html+='</div>';
+  }
+
+  if(info.tools && info.tools.length){
+    html+='<div class="svc-info-section"><div class="svc-info-label">Tools needed</div><ul class="svc-signs-list">'+
+      info.tools.map(function(tool){ return '<li>'+esc(tool)+'</li>'; }).join('')+
+      '</ul></div>';
+  }
+
+  html+='</div>';
+  return html;
+}
+
 function svcRow(v,s,st){
   var ignored=(v.ignoredServices||[]).indexOf(s.id)>=0;
+  var infoKey=v.id+'_'+s.id;
+  var infoOpen=!!(state.svcInfoExpanded && state.svcInfoExpanded[infoKey]);
+  var infoBtn='<button class="btn btn-sm btn-outline" style="font-size:11px" onclick="toggleSvcInfo(\''+v.id+'\',\''+s.id+'\')" title="Why, warning signs, parts & tools">ℹ️'+(infoOpen?' Hide':'')+'</button>';
+  var infoPanelHtml=infoOpen?buildSvcInfoPanel(v,s):'';
 
   if(st.status==='snoozed'){
     var wakeDate=new Date(st.snoozeUntil+'T00:00:00');
@@ -972,7 +1278,7 @@ function svcRow(v,s,st){
       '<span class="badge badge-purple2">Snoozed</span>'+
       '<div style="display:flex;gap:4px">'+
       '<button class="btn btn-sm btn-outline" onclick="clearSnooze(\''+v.id+'\',\''+s.id+'\')">Wake now</button>'+
-      '</div></div>';
+      '</div>'+infoPanelHtml+'</div>';
   }
 
   var bc=st.status==='overdue'?'badge-red':st.status==='due-soon'?'badge-amber':'badge-green';
@@ -1003,11 +1309,12 @@ function svcRow(v,s,st){
     (intervalMi>0?'<div class="progress-bar"><div class="progress-fill" style="width:'+Math.round(st.pct*100)+'%;background:'+fc+'"></div></div>':'')+
     '</div>'+
     '<span class="badge '+bc+'">'+st.label+'</span>'+
-    '<div style="display:flex;gap:4px">'+
+    '<div style="display:flex;gap:4px;flex-wrap:wrap">'+
     '<button class="btn btn-primary btn-sm" onclick="openLogService(\''+v.id+'\',\''+s.id+'\')">Log done</button>'+
     '<button class="btn btn-sm btn-outline" style="font-size:11px" onclick="openSnoozeMenu(\''+v.id+'\',\''+s.id+'\')">⏰ Remind later</button>'+
     '<button class="btn btn-sm btn-outline" style="font-size:11px" onclick="toggleIgnore(\''+v.id+'\',\''+s.id+'\')">Ignore</button>'+
-    '</div></div>';
+    infoBtn+
+    '</div>'+infoPanelHtml+'</div>';
 }
 
 // ── Schedule tab ──────────────────────────────────────
@@ -2072,6 +2379,7 @@ firebase.auth().onAuthStateChanged(function(user){
     document.getElementById('setup-wrap').style.display='flex';
   }
 });
+
 
 </script>
 </body>
